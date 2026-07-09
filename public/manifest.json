@@ -1,0 +1,22 @@
+{
+  "id": "/",
+  "name": "Athroics 餐厅",
+  "short_name": "餐厅",
+  "description": "个人餐厅地图 — 想去吃 / 去过 / 评分 / 今晚吃什么",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "lang": "zh-CN",
+  "categories": ["food", "lifestyle", "travel"],
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "今晚吃什么", "short_name": "吃什么", "url": "/?action=wizard" },
+    { "name": "帮我选一家", "short_name": "帮我选", "url": "/?action=pick" }
+  ]
+}

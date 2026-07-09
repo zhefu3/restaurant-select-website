@@ -1,0 +1,93 @@
+/** 客户端筛选：搜索、城市、价格、距离、隐藏连锁。全部基于已加载数据，零 API 成本。 */
+
+import { cuisineGroup, cuisineLabel } from "./cuisine";
+import type { RestaurantView } from "./types";
+
+export interface ClientFilters {
+  search: string;
+  cuisine: string; // "all" 或菜系大类名
+  city: string; // "all" 或城市名
+  prices: number[]; // 选中的价位(1-4)；空 = 不限
+  maxDistanceKm: number | null; // null = 不限
+  hideChains: boolean;
+  list: number | null; // 个人层：只看某收藏夹/清单
+  tag: string | null; // 个人层：只看带某标签的
+}
+
+export const emptyClientFilters: ClientFilters = {
+  search: "",
+  cuisine: "all",
+  city: "all",
+  prices: [],
+  maxDistanceKm: null,
+  hideChains: false,
+  list: null,
+  tag: null,
+};
+
+/** 从地址解析城市。地址形如 "377 Santana Row #1090, San Jose, CA 95128, USA"。 */
+export function extractCity(address: string | null): string | null {
+  if (!address) return null;
+  const m = address.match(/,\s*([^,]+),\s*[A-Z]{2}\s*\d{5}/);
+  return m ? m[1].trim() : null;
+}
+
+export interface CityOption {
+  value: string;
+  count: number;
+}
+
+/** 统计出现的城市，按数量降序。 */
+export function collectCities(list: RestaurantView[]): CityOption[] {
+  const counts = new Map<string, number>();
+  for (const r of list) {
+    const c = extractCity(r.address);
+    if (!c) continue;
+    counts.set(c, (counts.get(c) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .map(([value, count]) => ({ value, count }))
+    .sort((a, b) => b.count - a.count);
+}
+
+/** 名字出现 ≥ threshold 次的判定为连锁店。 */
+export function detectChains(
+  list: RestaurantView[],
+  threshold = 3,
+): Set<string> {
+  const counts = new Map<string, number>();
+  for (const r of list) counts.set(r.name, (counts.get(r.name) ?? 0) + 1);
+  return new Set(
+    [...counts.entries()].filter(([, c]) => c >= threshold).map(([n]) => n),
+  );
+}
+
+/** 应用全部客户端筛选（不排序）。 */
+export function applyClientFilters(
+  list: RestaurantView[],
+  f: ClientFilters,
+  chains: Set<string>,
+): RestaurantView[] {
+  const q = f.search.trim().toLowerCase();
+  return list.filter((r) => {
+    if (q) {
+      // 搜索匹配店名 + 地址 + 菜系标签（大类和细分），所以搜「拉面」「火锅」也能命中。
+      const hay = `${r.name} ${r.address ?? ""} ${cuisineLabel(r.cuisine)} ${cuisineGroup(r.cuisine)}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    if (f.cuisine !== "all" && cuisineGroup(r.cuisine) !== f.cuisine) {
+      return false;
+    }
+    if (f.city !== "all" && extractCity(r.address) !== f.city) return false;
+    if (f.prices.length > 0) {
+      if (r.priceLevel == null || !f.prices.includes(r.priceLevel)) return false;
+    }
+    if (f.maxDistanceKm != null) {
+      if (r.distanceKm == null || r.distanceKm > f.maxDistanceKm) return false;
+    }
+    if (f.hideChains && chains.has(r.name)) return false;
+    if (f.list != null && !(r.listIds ?? []).includes(f.list)) return false;
+    if (f.tag != null && !(r.tags ?? []).includes(f.tag)) return false;
+    return true;
+  });
+}
