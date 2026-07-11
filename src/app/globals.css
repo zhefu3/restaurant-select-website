@@ -268,6 +268,10 @@ select:focus-visible,
 .dark .meteor-layer {
   opacity: 1;
 }
+/* 外星人对话激活时，整层提到最高——地图/聊天/命令面板都别想挡住它 */
+.meteor-layer-top {
+  z-index: 1500 !important;
+}
 /* 一抹月光 */
 .starfield::before {
   content: "";
@@ -380,6 +384,87 @@ select:focus-visible,
   50% {
     opacity: 1;
   }
+}
+/* UFO 可点：放大点击区 + 悬停发光提示（不用 transform，会和飞行动画打架） */
+.ufo-clickable {
+  pointer-events: auto;
+  cursor: pointer;
+}
+.ufo-clickable::before {
+  content: "";
+  position: absolute;
+  inset: -16px;
+}
+.ufo-clickable:hover {
+  filter: drop-shadow(0 0 13px rgba(159, 180, 255, 0.95)) brightness(1.15);
+}
+.ufo-frozen {
+  animation-play-state: paused !important;
+}
+/* 点开后：飞船停住，小外星人冒头 + 贴着飞船的小气泡对话（不遮挡整页） */
+.spaceship.ufo-active {
+  opacity: 1 !important;
+  animation-play-state: paused !important;
+  pointer-events: auto;
+  z-index: 50;
+  filter: drop-shadow(0 0 10px rgba(159, 180, 255, 0.8));
+}
+.ufo-alien {
+  position: absolute;
+  left: 50%;
+  top: -21px;
+  transform: translateX(-50%);
+  animation: alien-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.ufo-alien .wave {
+  transform-box: fill-box;
+  transform-origin: 50% 90%;
+  animation: alien-wave 0.9s ease-in-out infinite;
+}
+@keyframes alien-pop {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px) scale(0.5);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+@keyframes alien-wave {
+  0%,
+  100% {
+    transform: rotate(-10deg);
+  }
+  50% {
+    transform: rotate(22deg);
+  }
+}
+.ufo-bubble {
+  position: absolute;
+  top: calc(100% + 18px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 240px;
+  max-width: 76vw;
+  pointer-events: auto;
+  border-radius: 14px;
+  border: 1px solid rgba(74, 222, 128, 0.55);
+  background: hsl(var(--background));
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  animation: alien-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.ufo-bubble::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -6.5px;
+  transform: translateX(-50%) rotate(45deg);
+  width: 12px;
+  height: 12px;
+  background: hsl(var(--background));
+  border-left: 1px solid rgba(74, 222, 128, 0.55);
+  border-top: 1px solid rgba(74, 222, 128, 0.55);
 }
 
 /* ── 深色模式顶部星空（旧的头部装饰，保留兼容） ── */
