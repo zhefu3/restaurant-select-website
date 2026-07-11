@@ -59,10 +59,11 @@ export function RestaurantList({
               }
             }}
             className={cn(
-              "cursor-pointer transition-colors hover:border-foreground/25",
+              "group cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:border-foreground/25 hover:shadow-md",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500",
               // 屏外卡片跳过渲染（长列表提速）；记住高度避免滚动条跳动。
               "[contain-intrinsic-size:auto_88px] [content-visibility:auto]",
+              isRecommended(r) && "reco-card",
               focused && "border-blue-500 ring-1 ring-blue-500",
             )}
             title="点击在地图上定位"
@@ -85,7 +86,7 @@ export function RestaurantList({
                     src={`/api/photo?restaurantId=${r.id}`}
                     alt=""
                     loading="lazy"
-                    className="absolute inset-0 h-full w-full object-cover"
+                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
                     onError={(e) => e.currentTarget.remove()}
                   />
                 )}

@@ -139,7 +139,7 @@ function LocateControl({
           const p = { lat: pos.coords.latitude, lng: pos.coords.longitude };
           setUserLoc(p);
           setLocating(false);
-          // 像 Google Maps：定位后放大到当前位置（setView 避开 flyTo 被聚类打断）。
+          // 像 Google Maps：定位后放大到当前位置（瞬移，避免动画被聚类打断）。
           if (fly) map.setView([p.lat, p.lng], 16);
         },
         (err) => {
@@ -239,6 +239,7 @@ function RegionController({
       return;
     }
     if (!regionCenter) return;
+    // 切地区仍用瞬移 setView：聚类会打断动画 setView 导致地图空白（实测过）。
     map.setView([regionCenter.lat, regionCenter.lng], 12);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [regionKey]);
@@ -512,6 +513,11 @@ export default function RestaurantMap({
       center={[home.lat, home.lng]}
       zoom={11}
       scrollWheelZoom
+      zoomSnap={0.5}
+      zoomDelta={0.5}
+      wheelPxPerZoomLevel={110}
+      zoomAnimation
+      zoomAnimationThreshold={8}
       className="h-full w-full"
     >
       <TileLayer

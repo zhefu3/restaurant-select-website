@@ -12,6 +12,7 @@ export interface ClientFilters {
   hideChains: boolean;
   list: number | null; // 个人层：只看某收藏夹/清单
   tag: string | null; // 个人层：只看带某标签的
+  mood: string | null; // 场景：约会/聚餐/一人食…（启发式）
 }
 
 export const emptyClientFilters: ClientFilters = {
@@ -23,7 +24,49 @@ export const emptyClientFilters: ClientFilters = {
   hideChains: false,
   list: null,
   tag: null,
+  mood: null,
 };
+
+/** 「适合场景」预设（借鉴 The Infatuation 的 perfect-for，启发式映射，零成本）。 */
+export const MOODS: { key: string; emoji: string; label: string }[] = [
+  { key: "date", emoji: "💕", label: "约会" },
+  { key: "group", emoji: "👨‍👩‍👧", label: "聚餐" },
+  { key: "solo", emoji: "🧍", label: "一人食" },
+  { key: "family", emoji: "👵", label: "带爸妈" },
+  { key: "gem", emoji: "💎", label: "高分宝藏" },
+  { key: "cheap", emoji: "💰", label: "便宜大碗" },
+];
+
+/** 某店是否符合某场景（用菜系大类 + 价位 + 评分 + 评论数启发式判断）。 */
+export function matchesMood(r: RestaurantView, mood: string): boolean {
+  const g = cuisineGroup(r.cuisine);
+  const rating = r.rating ?? 0;
+  const price = r.priceLevel;
+  const reviews = r.reviewCount ?? 0;
+  switch (mood) {
+    case "date":
+      return (
+        rating >= 4.5 &&
+        (price ?? 0) >= 2 &&
+        ["日料", "意/欧陆", "海鲜", "美式", "中东"].includes(g)
+      );
+    case "group":
+      return ["中餐", "韩餐", "东南亚", "美式"].includes(g);
+    case "solo":
+      return (
+        ["快餐/简餐", "日料", "咖啡/甜点/烘焙"].includes(g) &&
+        (price == null || price <= 2)
+      );
+    case "family":
+      return ["中餐", "海鲜", "南亚/印度"].includes(g) && rating >= 4.4;
+    case "gem":
+      return rating >= 4.6 && reviews > 0 && reviews < 800;
+    case "cheap":
+      return price != null && price <= 1 && rating >= 4.3;
+    default:
+      return true;
+  }
+}
 
 /** 从地址解析城市。地址形如 "377 Santana Row #1090, San Jose, CA 95128, USA"。 */
 export function extractCity(address: string | null): string | null {
@@ -88,6 +131,7 @@ export function applyClientFilters(
     if (f.hideChains && chains.has(r.name)) return false;
     if (f.list != null && !(r.listIds ?? []).includes(f.list)) return false;
     if (f.tag != null && !(r.tags ?? []).includes(f.tag)) return false;
+    if (f.mood != null && !matchesMood(r, f.mood)) return false;
     return true;
   });
 }

@@ -1,7 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { MapPin, Sparkles, Swords, UtensilsCrossed } from "lucide-react";
+import {
+  MapPin,
+  Search,
+  Sparkles,
+  Swords,
+  Trophy,
+  UtensilsCrossed,
+} from "lucide-react";
 import { MapView } from "@/components/map/MapView";
 import { RestaurantList } from "@/components/RestaurantList";
 import { XhsPasteBox } from "@/components/XhsPasteBox";
@@ -24,6 +31,7 @@ import {
   collectCities,
   detectChains,
   emptyClientFilters,
+  MOODS,
   type ClientFilters,
 } from "@/lib/filters";
 import {
@@ -41,6 +49,11 @@ import {
 } from "@/lib/types";
 import { PUBLIC_DEMO, DEMO_MESSAGE } from "@/lib/demo";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { StarField } from "@/components/StarField";
+import { CommandPalette } from "@/components/CommandPalette";
+import { MoodChips } from "@/components/MoodChips";
+import { LeaderboardModal } from "@/components/LeaderboardModal";
+import { fireConfetti } from "@/lib/confetti";
 import { ListSkeleton } from "@/components/ListSkeleton";
 import { RegionInsights } from "@/components/RegionInsights";
 
@@ -115,6 +128,7 @@ export default function Home() {
   const [pick, setPick] = useState<RestaurantView | null>(null);
   const [focusId, setFocusId] = useState<number | null>(null);
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [leaderboardOpen, setLeaderboardOpen] = useState(false);
   const [duelOpen, setDuelOpen] = useState(false);
   // PWA 快捷方式：?action=wizard / ?action=pick（pick 要等数据加载完再执行）。
   const [pendingAction, setPendingAction] = useState<string | null>(null);
@@ -295,6 +309,7 @@ export default function Home() {
         hideChains: u.hideChains,
         list: u.list,
         tag: u.tag,
+        mood: null,
       });
       setSort({ key: u.sortKey, dir: u.sortDir });
       if (u.focus != null) setPendingFocus(u.focus);
@@ -403,7 +418,8 @@ export default function Home() {
     clientFilters.maxDistanceKm != null ||
     clientFilters.hideChains ||
     clientFilters.list != null ||
-    clientFilters.tag != null;
+    clientFilters.tag != null ||
+    clientFilters.mood != null;
 
   function clearFilters() {
     setFilters({ visit: "all", source: "all" });
@@ -464,9 +480,17 @@ export default function Home() {
       label: `🏷️ ${clientFilters.tag}`,
       clear: () => setClientFilters((c) => ({ ...c, tag: null })),
     });
+  if (clientFilters.mood != null) {
+    const m = MOODS.find((x) => x.key === clientFilters.mood);
+    filterChips.push({
+      label: `${m?.emoji ?? ""} ${m?.label ?? "场景"}`,
+      clear: () => setClientFilters((c) => ({ ...c, mood: null })),
+    });
+  }
 
   function handlePick() {
     const p = pickForMe(visible);
+    if (p) fireConfetti(); // 先撒彩带（同步加进 body），再触发重渲染
     setPick(p);
     if (p) setFocusId(p.id);
   }
@@ -496,6 +520,7 @@ export default function Home() {
       setPendingAction(null);
     } else if (pendingAction === "pick" && visible.length > 0) {
       const p = pickForMe(visible);
+      if (p) fireConfetti();
       setPick(p);
       if (p) setFocusId(p.id);
       setPendingAction(null);
@@ -504,15 +529,32 @@ export default function Home() {
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-6">
+      <StarField />
       {PUBLIC_DEMO && (
         <div className="mb-4 flex items-center gap-2 rounded-lg border border-sky-200 dark:border-sky-900/50 bg-sky-50 dark:bg-sky-950/40 px-3 py-2 text-xs text-sky-800 dark:text-sky-200">
           <span>{DEMO_MESSAGE}</span>
         </div>
       )}
-      <header className="mb-4">
-        <div className="flex items-start justify-between gap-2">
-          <h1 className="text-2xl font-bold">Athroics · 餐厅</h1>
-          <ThemeToggle />
+      <header className="relative mb-4">
+        <div className="relative flex items-start justify-between gap-2">
+          <h1 className="brand-title text-2xl font-bold tracking-tight">
+            Athroics · 餐厅
+          </h1>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() =>
+                window.dispatchEvent(
+                  new KeyboardEvent("keydown", { key: "k", metaKey: true }),
+                )
+              }
+              title="命令面板（⌘K）"
+              className="hidden items-center gap-1 rounded-full border border-input px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground sm:inline-flex"
+            >
+              <Search className="h-3.5 w-3.5" />
+              <kbd className="font-sans">⌘K</kbd>
+            </button>
+            <ThemeToggle />
+          </div>
         </div>
         <p className="text-sm text-muted-foreground">
           {activeIsHome ? "🏠 我的湾区" : `✈️ ${activeRegion?.name ?? ""}`}
@@ -664,6 +706,15 @@ export default function Home() {
                   <Sparkles className="h-4 w-4" />
                   帮我选
                 </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setLeaderboardOpen(true)}
+                  title="按我的评分看排名"
+                >
+                  <Trophy className="h-4 w-4" />
+                  我的榜
+                </Button>
                 {!PUBLIC_DEMO && (
                   <Button
                     size="sm"
@@ -678,7 +729,10 @@ export default function Home() {
             </div>
 
             {pick && (
-              <div className="flex gap-3 rounded-lg border border-amber-300 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/40 p-3">
+              <div
+                key={pick.id}
+                className="pick-reveal relative flex gap-3 rounded-lg border border-amber-300 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/40 p-3"
+              >
                 {pick.hasPhoto && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -713,6 +767,10 @@ export default function Home() {
             )}
 
             <Filters value={filters} onChange={setFilters} />
+            <MoodChips
+              value={clientFilters.mood}
+              onChange={(mood) => setClientFilters((f) => ({ ...f, mood }))}
+            />
             <FilterBar
               filters={clientFilters}
               onChange={setClientFilters}
@@ -777,7 +835,35 @@ export default function Home() {
         onLocate={setFocusId}
       />
       <DuelModal open={duelOpen} onClose={() => setDuelOpen(false)} />
+      <LeaderboardModal
+        open={leaderboardOpen}
+        onClose={() => setLeaderboardOpen(false)}
+        restaurants={withMy}
+        onLocate={setFocusId}
+      />
       {!PUBLIC_DEMO && <ChatWidget onLocate={setFocusId} onDataChanged={load} />}
+      <CommandPalette
+        restaurants={withMy}
+        regions={regions}
+        onFocusRestaurant={setFocusId}
+        onSwitchRegion={setActiveRegionId}
+        onAction={(a) => {
+          if (a === "pick") handlePick();
+          else if (a === "wizard") setWizardOpen(true);
+          else if (a === "nearby") nearbyQuick();
+          else if (a === "blacklist") setShowBlacklist((v) => !v);
+          else if (a === "theme") {
+            const root = document.documentElement;
+            const next = !root.classList.contains("dark");
+            root.classList.add("theme-anim");
+            root.classList.toggle("dark", next);
+            window.setTimeout(() => root.classList.remove("theme-anim"), 550);
+            try {
+              localStorage.setItem("theme", next ? "dark" : "light");
+            } catch {}
+          }
+        }}
+      />
       <BackToTop />
     </main>
   );

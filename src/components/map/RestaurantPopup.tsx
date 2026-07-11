@@ -56,6 +56,7 @@ export function RestaurantPopup({
   const [done, setDone] = useState(false);
   const [want, setWant] = useState(restaurant.wantToEat);
   const [wantSaved, setWantSaved] = useState(false);
+  const [popping, setPopping] = useState(false);
   const [scoreInput, setScoreInput] = useState("");
 
   // 推荐点菜
@@ -264,6 +265,12 @@ export function RestaurantPopup({
     const next = !want;
     setWant(next);
     setWantSaved(false);
+    if (next) {
+      // 收藏时来一发星爆动画（取消收藏不放）
+      setPopping(false);
+      requestAnimationFrame(() => setPopping(true));
+      setTimeout(() => setPopping(false), 650);
+    }
     const res = await fetch("/api/wishlist", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -378,6 +385,25 @@ export function RestaurantPopup({
       {restaurant.address && (
         <div className="text-xs text-muted-foreground">{restaurant.address}</div>
       )}
+      {/* 订位 / 外卖 快捷深链（外部搜索，演示模式也可用） */}
+      <div className="flex flex-wrap gap-1.5">
+        <a
+          href={`https://www.opentable.com/s?term=${encodeURIComponent(restaurant.name)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rounded-full border px-2 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        >
+          📅 订位
+        </a>
+        <a
+          href={`https://www.doordash.com/search/store/${encodeURIComponent(restaurant.name)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rounded-full border px-2 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        >
+          🛵 外卖
+        </a>
+      </div>
       {restaurant.visited && restaurant.myRating != null && (
         <div className="text-xs font-medium text-amber-600">
           我的评分：{restaurant.myRating} 分
@@ -387,16 +413,38 @@ export function RestaurantPopup({
       {/* 快捷操作行（只读演示下隐藏写操作） */}
       {!PUBLIC_DEMO && (
         <div className="flex flex-wrap items-center gap-1.5">
-          <button
-            onClick={toggleWant}
-            className={`rounded-full border px-2 py-0.5 text-xs font-medium transition-colors ${
-              want
-                ? "border-amber-400 bg-amber-100 text-amber-800"
-                : "border-border text-muted-foreground hover:bg-accent"
-            }`}
-          >
-            {want ? "⭐ 已想去" : "☆ 想去吃"}
-          </button>
+          <span className="relative inline-flex">
+            <button
+              onClick={toggleWant}
+              className={`rounded-full border px-2 py-0.5 text-xs font-medium transition-colors ${
+                popping ? "fav-pop " : ""
+              }${
+                want
+                  ? "border-amber-400 bg-amber-100 text-amber-800"
+                  : "border-border text-muted-foreground hover:bg-accent"
+              }`}
+            >
+              {want ? "⭐ 已想去" : "☆ 想去吃"}
+            </button>
+            {popping && (
+              <span className="fav-burst" aria-hidden>
+                {[0, 1, 2, 3, 4, 5].map((i) => {
+                  const a = (i / 6) * Math.PI * 2;
+                  return (
+                    <span
+                      key={i}
+                      style={
+                        {
+                          "--tx": `${Math.cos(a) * 22}px`,
+                          "--ty": `${Math.sin(a) * 22}px`,
+                        } as React.CSSProperties
+                      }
+                    />
+                  );
+                })}
+              </span>
+            )}
+          </span>
           {!done && !restaurant.visited && (
             <button
               onClick={() => markVisited(null)}

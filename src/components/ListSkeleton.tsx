@@ -3,7 +3,10 @@ export function ListSkeleton({ rows = 6 }: { rows?: number }) {
   return (
     <div className="space-y-2" aria-hidden>
       {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} className="flex items-center gap-3 rounded-lg border p-3">
+        <div
+          key={i}
+          className="skel-shimmer flex items-center gap-3 rounded-lg border p-3"
+        >
           <div className="h-14 w-14 shrink-0 animate-pulse rounded-lg bg-muted" />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
