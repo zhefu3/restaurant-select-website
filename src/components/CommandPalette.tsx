@@ -8,6 +8,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Search } from "lucide-react";
 import { cuisineLabel } from "@/lib/cuisine";
+import { getRecent } from "@/lib/recent";
 import type { RestaurantView } from "@/lib/types";
 
 /** 只取命令面板要用的字段，避免和两处 RegionSummary 定义耦合。 */
@@ -18,7 +19,7 @@ type Item = {
   icon: string;
   label: string;
   sub?: string;
-  group: "操作" | "地区" | "餐厅";
+  group: "操作" | "最近" | "地区" | "餐厅";
   run: () => void;
 };
 
@@ -49,6 +50,7 @@ export function CommandPalette({
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [sel, setSel] = useState(0);
+  const [recentIds, setRecentIds] = useState<number[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -70,6 +72,7 @@ export function CommandPalette({
     if (open) {
       setQ("");
       setSel(0);
+      setRecentIds(getRecent());
       setTimeout(() => inputRef.current?.focus(), 30);
     }
   }, [open]);
@@ -97,7 +100,21 @@ export function CommandPalette({
     }));
 
     const query = q.trim().toLowerCase();
-    if (!query) return [...actions, ...regionItems];
+    if (!query) {
+      const recentItems: Item[] = recentIds
+        .map((id) => restaurants.find((r) => r.id === id))
+        .filter((r): r is RestaurantView => r != null)
+        .slice(0, 6)
+        .map((r) => ({
+          key: `rc-${r.id}`,
+          icon: "🕘",
+          label: r.name,
+          sub: [r.rating != null ? `⭐${r.rating}` : null, cuisineLabel(r.cuisine)].filter(Boolean).join(" · "),
+          group: "最近",
+          run: () => { onFocusRestaurant(r.id); close(); },
+        }));
+      return [...actions, ...recentItems, ...regionItems];
+    }
 
     const match = (s: string) => s.toLowerCase().includes(query);
     const restItems: Item[] = restaurants
@@ -117,7 +134,7 @@ export function CommandPalette({
       ...regionItems.filter((r) => match(r.label)),
       ...restItems,
     ];
-  }, [q, regions, restaurants, onAction, onSwitchRegion, onFocusRestaurant]);
+  }, [q, regions, restaurants, recentIds, onAction, onSwitchRegion, onFocusRestaurant]);
 
   useEffect(() => setSel(0), [q]);
 

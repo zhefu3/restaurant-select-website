@@ -65,6 +65,7 @@ import { ListSkeleton } from "@/components/ListSkeleton";
 import { RegionInsights } from "@/components/RegionInsights";
 import { ForYouRail } from "@/components/ForYouRail";
 import { countChains } from "@/lib/chains";
+import { pushRecent } from "@/lib/recent";
 
 type UrlInit = {
   regionId: number | null;
@@ -361,6 +362,11 @@ export default function Home() {
     }
     setRestored(true);
   }, []);
+
+  // 记录「最近看过」：聚焦某店时写入 localStorage（供 ⌘K 空查询时快速回访）。
+  useEffect(() => {
+    if (focusId != null) pushRecent(focusId);
+  }, [focusId]);
 
   // 深链：对应地区数据加载后，聚焦并打开那家店（FocusController 会飞过去开弹窗）。
   useEffect(() => {
