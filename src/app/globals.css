@@ -9,25 +9,26 @@
 @import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 
 :root {
-  /* 暖米白纸感（不再是诊所白），卡片更亮微浮，灰阶/边框都偏暖 */
-  --background: 36 44% 97.5%;
-  --foreground: 24 18% 12%;
-  --card: 42 60% 99.5%;
-  --card-foreground: 24 18% 12%;
-  --primary: 22 28% 15%;
-  --primary-foreground: 40 52% 98%;
-  --secondary: 33 36% 93%;
-  --secondary-foreground: 24 22% 20%;
-  --muted: 33 36% 93%;
-  --muted-foreground: 28 12% 42%;
-  --accent: 33 42% 90.5%;
-  --accent-foreground: 24 24% 18%;
-  --destructive: 0 78% 55%;
-  --destructive-foreground: 40 52% 98%;
-  --border: 32 28% 87%;
-  --input: 32 28% 87%;
-  --ring: 24 45% 32%;
-  --radius: 0.5rem;
+  /* 取向 B：柔灰 SaaS（Notion / Linear 风）——中性冷灰底、纯白卡片、克制专业。
+     品牌暖色只保留在 logo 渐变字 / 金色推荐 / 分数徽章上做点睛。 */
+  --background: 220 16% 97.5%;
+  --foreground: 220 18% 15%;
+  --card: 0 0% 100%;
+  --card-foreground: 220 18% 15%;
+  --primary: 220 16% 20%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 220 14% 94%;
+  --secondary-foreground: 220 14% 26%;
+  --muted: 220 14% 94.5%;
+  --muted-foreground: 220 9% 45%;
+  --accent: 220 15% 93.5%;
+  --accent-foreground: 220 16% 22%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 220 13% 89.5%;
+  --input: 220 13% 89.5%;
+  --ring: 217 72% 56%;
+  --radius: 0.65rem;
 }
 
 .dark {
@@ -57,11 +58,13 @@
 body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
-  /* 环境氛围：柔和径向光晕，给平面背景加纵深（固定不随滚动） */
-  background-image:
-    radial-gradient(68% 56% at 6% -8%, hsla(32, 96%, 60%, 0.16), transparent 60%),
-    radial-gradient(58% 48% at 104% 2%, hsla(348, 92%, 66%, 0.11), transparent 58%),
-    radial-gradient(62% 55% at 102% 108%, hsla(18, 92%, 58%, 0.09), transparent 62%);
+  /* 取向 B（SaaS/Notion）：背景保持干净近平——只加一抹极淡的中性冷光在顶部，
+     给纯灰底一点点纵深，不喧哗。 */
+  background-image: radial-gradient(
+    72% 55% at 50% -20%,
+    hsla(220, 24%, 58%, 0.05),
+    transparent 62%
+  );
   background-attachment: fixed;
 }
 .dark body {

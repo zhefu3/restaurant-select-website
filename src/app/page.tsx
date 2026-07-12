@@ -25,7 +25,12 @@ import {
   type SortState,
 } from "@/components/SortControls";
 import { Button } from "@/components/ui/button";
-import { collectCuisineGroups, cuisineLabel } from "@/lib/cuisine";
+import {
+  collectCuisineGroups,
+  cuisineLabel,
+  cuisineEmoji,
+  cuisineColor,
+} from "@/lib/cuisine";
 import {
   applyClientFilters,
   collectCities,
@@ -56,6 +61,7 @@ import { LeaderboardModal } from "@/components/LeaderboardModal";
 import { fireConfetti } from "@/lib/confetti";
 import { ListSkeleton } from "@/components/ListSkeleton";
 import { RegionInsights } from "@/components/RegionInsights";
+import { ForYouRail } from "@/components/ForYouRail";
 
 type UrlInit = {
   regionId: number | null;
@@ -156,6 +162,24 @@ export default function Home() {
   const [pendingNearMe, setPendingNearMe] = useState(false);
   // 「黑名单」视图：只看被手动拉黑的店。
   const [showBlacklist, setShowBlacklist] = useState(false);
+  // 按时段的问候语（放 effect 里算，避免 SSR/CSR 时间不一致的水合告警）。
+  const [greeting, setGreeting] = useState<string | null>(null);
+  useEffect(() => {
+    const h = new Date().getHours();
+    setGreeting(
+      h < 5
+        ? "🌛 还没睡？来点宵夜"
+        : h < 11
+          ? "☀️ 早上好，今天吃点什么"
+          : h < 14
+            ? "🍜 中午好，午饭想好了吗"
+            : h < 17
+              ? "🌤️ 下午好"
+              : h < 21
+                ? "🍽️ 晚上好，今晚吃什么"
+                : "🌙 夜深了，来顿宵夜？",
+    );
+  }, []);
 
   const activeRegion = useMemo(
     () => regions.find((r) => r.id === activeRegionId) ?? null,
@@ -536,6 +560,11 @@ export default function Home() {
         </div>
       )}
       <header className="relative mb-4">
+        {greeting && (
+          <p className="mb-0.5 text-xs font-medium text-muted-foreground">
+            {greeting}
+          </p>
+        )}
         <div className="relative flex items-start justify-between gap-2">
           <h1 className="brand-title text-2xl font-bold tracking-tight">
             Athroics · 餐厅
@@ -733,16 +762,27 @@ export default function Home() {
                 key={pick.id}
                 className="pick-reveal relative flex gap-3 rounded-lg border border-amber-300 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/40 p-3"
               >
-                {pick.hasPhoto && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={`/api/photo?restaurantId=${pick.id}`}
-                    alt=""
-                    loading="lazy"
-                    className="h-16 w-16 shrink-0 rounded-md object-cover"
-                    onError={(e) => e.currentTarget.remove()}
-                  />
-                )}
+                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md">
+                  <div
+                    className="flex h-full w-full items-center justify-center text-2xl"
+                    style={{
+                      background: `linear-gradient(135deg, ${cuisineColor(pick.cuisine)}33, ${cuisineColor(pick.cuisine)}66)`,
+                    }}
+                    aria-hidden
+                  >
+                    {cuisineEmoji(pick.cuisine)}
+                  </div>
+                  {pick.hasPhoto && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={`/api/photo?restaurantId=${pick.id}`}
+                      alt=""
+                      loading="lazy"
+                      className="absolute inset-0 h-full w-full object-cover"
+                      onError={(e) => e.currentTarget.remove()}
+                    />
+                  )}
+                </div>
                 <div className="min-w-0">
                   <div className="mb-1 text-xs font-medium text-amber-700 dark:text-amber-300">
                     今天就吃这家吧 👇
@@ -764,6 +804,16 @@ export default function Home() {
                   </div>
                 </div>
               </div>
+            )}
+
+            {/* 「为你推荐」精选栏：只在发现态出现（没搜索/不看黑名单），
+                自身在候选不足 4 家时会隐藏，不喧宾夺主。 */}
+            {!clientFilters.search && !showBlacklist && (
+              <ForYouRail
+                restaurants={visible}
+                onFocus={setFocusId}
+                onHover={handleHover}
+              />
             )}
 
             <Filters value={filters} onChange={setFilters} />

@@ -5,7 +5,7 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cuisineLabel } from "@/lib/cuisine";
+import { cuisineLabel, cuisineEmoji, cuisineColor } from "@/lib/cuisine";
 import { googleMapsUrl, type RestaurantView } from "@/lib/types";
 import { useEscape } from "@/lib/use-escape";
 import {
@@ -62,9 +62,29 @@ export function WizardModal({
       >
         <div className="mb-4 flex items-center justify-between">
           <h3 className="font-semibold">🍽️ 今晚吃什么</h3>
-          <button onClick={onClose} className="text-muted-foreground">
-            <X className="h-4 w-4" />
-          </button>
+          <div className="flex items-center gap-3">
+            {/* 三步进度点：让「三问」有明确的推进感 */}
+            {step <= 3 && (
+              <div className="flex items-center gap-1.5" aria-hidden>
+                {[1, 2, 3].map((s) => (
+                  <span
+                    key={s}
+                    className={
+                      "h-1.5 rounded-full transition-all duration-300 " +
+                      (s === step
+                        ? "w-5 bg-foreground"
+                        : s < step
+                          ? "w-1.5 bg-foreground/60"
+                          : "w-1.5 bg-muted-foreground/25")
+                    }
+                  />
+                ))}
+              </div>
+            )}
+            <button onClick={onClose} className="text-muted-foreground">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
         {step === 1 && (
@@ -124,16 +144,28 @@ export function WizardModal({
             )}
             {picks.map(({ restaurant: r, reasons }, i) => (
               <div key={r.id} className="flex gap-3 rounded-lg border p-3">
-                {r.hasPhoto && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={`/api/photo?restaurantId=${r.id}`}
-                    alt=""
-                    loading="lazy"
-                    className="h-16 w-16 shrink-0 rounded-md object-cover"
-                    onError={(e) => e.currentTarget.remove()}
-                  />
-                )}
+                {/* 缩略图：有照片盖真实照片，否则露菜系 emoji 底（和列表/精选栏一致） */}
+                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md">
+                  <div
+                    className="flex h-full w-full items-center justify-center text-2xl"
+                    style={{
+                      background: `linear-gradient(135deg, ${cuisineColor(r.cuisine)}33, ${cuisineColor(r.cuisine)}66)`,
+                    }}
+                    aria-hidden
+                  >
+                    {cuisineEmoji(r.cuisine)}
+                  </div>
+                  {r.hasPhoto && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={`/api/photo?restaurantId=${r.id}`}
+                      alt=""
+                      loading="lazy"
+                      className="absolute inset-0 h-full w-full object-cover"
+                      onError={(e) => e.currentTarget.remove()}
+                    />
+                  )}
+                </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
                     <a

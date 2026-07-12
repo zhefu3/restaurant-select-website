@@ -5,6 +5,7 @@ import { useMap } from "react-leaflet";
 import type { PopupEvent } from "leaflet";
 import { googleMapsUrl, type RestaurantView, type XhsPost } from "@/lib/types";
 import { PUBLIC_DEMO } from "@/lib/demo";
+import { scoreTier } from "@/lib/score";
 
 interface MenuItem {
   original: string;
@@ -405,8 +406,20 @@ export function RestaurantPopup({
         </a>
       </div>
       {restaurant.visited && restaurant.myRating != null && (
-        <div className="text-xs font-medium text-amber-600">
-          我的评分：{restaurant.myRating} 分
+        <div className="flex items-center gap-1.5 text-xs">
+          <span className="text-muted-foreground">我的评分</span>
+          <span
+            className={
+              "inline-flex items-center rounded-full px-2 py-0.5 font-bold tabular-nums ring-1 " +
+              [
+                scoreTier(restaurant.myRating).bg,
+                scoreTier(restaurant.myRating).ring,
+                scoreTier(restaurant.myRating).text,
+              ].join(" ")
+            }
+          >
+            {restaurant.myRating} 分
+          </span>
         </div>
       )}
 

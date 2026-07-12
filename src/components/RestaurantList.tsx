@@ -7,6 +7,41 @@ import { Card, CardContent } from "@/components/ui/card";
 import { cuisineLabel, cuisineEmoji, cuisineColor } from "@/lib/cuisine";
 import { googleMapsUrl, isRecommended, type RestaurantView } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { scoreTier } from "@/lib/score";
+
+/** 右侧评分徽章：借鉴 Beli 的「醒目数字」。去过的店显示我的评分，没去过但合口味显示预测分。 */
+function ScoreChip({ r }: { r: RestaurantView }) {
+  if (r.visited && r.myRating != null) {
+    const t = scoreTier(r.myRating);
+    return (
+      <div
+        className={cn(
+          "flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-xl ring-1",
+          t.bg,
+          t.ring,
+        )}
+        title={`我给这家打了 ${r.myRating} 分`}
+      >
+        <span className={cn("text-base font-bold leading-none tabular-nums", t.text)}>
+          {r.myRating}
+        </span>
+        <span className={cn("mt-0.5 text-[9px] leading-none opacity-70", t.text)}>我的</span>
+      </div>
+    );
+  }
+  if (r.tasteScore != null && !r.visited) {
+    return (
+      <div
+        className="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-xl border border-dashed border-emerald-300 text-emerald-600 dark:border-emerald-800/70 dark:text-emerald-400"
+        title={`按你的口味预测：${r.tasteScore} 分合口味`}
+      >
+        <span className="text-base font-bold leading-none tabular-nums">{r.tasteScore}</span>
+        <span className="mt-0.5 text-[9px] leading-none opacity-70">🎯</span>
+      </div>
+    );
+  }
+  return null;
+}
 
 export function RestaurantList({
   restaurants,
@@ -116,13 +151,17 @@ export function RestaurantList({
                   )}
                 </div>
                 <div className="mt-0.5 text-xs text-muted-foreground">
-                  {r.rating != null && <>⭐ {r.rating} </>}
+                  {r.rating != null && (
+                    <span className="font-medium text-amber-600 dark:text-amber-500">
+                      ★ {r.rating}{" "}
+                    </span>
+                  )}
                   {r.reviewCount != null && (
                     <>({r.reviewCount.toLocaleString()}) </>
                   )}
                   {r.priceLevel != null && r.priceLevel > 0 && (
                     <span className="text-emerald-600 dark:text-emerald-500">
-                      {"¥".repeat(r.priceLevel)}{" "}
+                      · {"¥".repeat(r.priceLevel)}{" "}
                     </span>
                   )}
                   {r.cuisine && <>· {cuisineLabel(r.cuisine)} </>}
@@ -131,12 +170,6 @@ export function RestaurantList({
                     <span className="text-blue-600 dark:text-blue-400">
                       · 📍 {r.distanceFromMeKm.toFixed(1)} km
                     </span>
-                  )}
-                  {r.tasteScore != null && !r.visited && (
-                    <span className="text-emerald-600">· 🎯 {r.tasteScore}</span>
-                  )}
-                  {r.visited && r.myRating != null && (
-                    <span className="text-amber-600">· 我打 {r.myRating} 分</span>
                   )}
                 </div>
                 {r.address && (
@@ -157,6 +190,8 @@ export function RestaurantList({
                   </div>
                 )}
               </div>
+              {/* 右侧 Beli 式评分徽章：我的评分 / 预测合口味分 */}
+              <ScoreChip r={r} />
             </CardContent>
           </Card>
         );

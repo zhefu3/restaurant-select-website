@@ -5,6 +5,8 @@
 import { cuisineLabel } from "@/lib/cuisine";
 import { type RestaurantView } from "@/lib/types";
 import { useEscape } from "@/lib/use-escape";
+import { scoreTier } from "@/lib/score";
+import { cn } from "@/lib/utils";
 
 const MEDAL = ["🥇", "🥈", "🥉"];
 
@@ -83,11 +85,29 @@ export function LeaderboardModal({
                     {cuisineLabel(r.cuisine)}
                   </div>
                 </div>
-                <div className="shrink-0 text-right">
-                  <div className="text-lg font-bold text-amber-500">
+                <div
+                  className={cn(
+                    "flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-xl ring-1",
+                    scoreTier(r.myRating ?? 0).bg,
+                    scoreTier(r.myRating ?? 0).ring,
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "text-base font-bold leading-none tabular-nums",
+                      scoreTier(r.myRating ?? 0).text,
+                    )}
+                  >
                     {r.myRating}
                   </div>
-                  <div className="text-[10px] text-muted-foreground">我的分</div>
+                  <div
+                    className={cn(
+                      "mt-0.5 text-[9px] leading-none opacity-70",
+                      scoreTier(r.myRating ?? 0).text,
+                    )}
+                  >
+                    我的
+                  </div>
                 </div>
               </button>
             ))
