@@ -33,7 +33,17 @@ export function CommandPalette({
   regions: PaletteRegion[];
   onFocusRestaurant: (id: number) => void;
   onSwitchRegion: (id: number) => void;
-  onAction: (a: "pick" | "wizard" | "nearby" | "blacklist" | "theme") => void;
+  onAction: (
+    a:
+      | "pick"
+      | "wizard"
+      | "nearby"
+      | "blacklist"
+      | "theme"
+      | "profile"
+      | "leaderboard"
+      | "chains",
+  ) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
@@ -69,6 +79,9 @@ export function CommandPalette({
       { key: "a-pick", icon: "🎲", label: "帮我选一家", group: "操作", run: () => { onAction("pick"); close(); } },
       { key: "a-wizard", icon: "🍽️", label: "今晚吃什么（三问向导）", group: "操作", run: () => { onAction("wizard"); close(); } },
       { key: "a-near", icon: "📍", label: "附近（按离我最近）", group: "操作", run: () => { onAction("nearby"); close(); } },
+      { key: "a-profile", icon: "📊", label: "我的美食档案", group: "操作", run: () => { onAction("profile"); close(); } },
+      { key: "a-board", icon: "🏆", label: "我的美食榜", group: "操作", run: () => { onAction("leaderboard"); close(); } },
+      { key: "a-chains", icon: "🔗", label: "合并 / 展开连锁", group: "操作", run: () => { onAction("chains"); close(); } },
       { key: "a-black", icon: "🚫", label: "黑名单视图", group: "操作", run: () => { onAction("blacklist"); close(); } },
       { key: "a-theme", icon: "🌓", label: "切换深色 / 浅色", group: "操作", run: () => { onAction("theme"); close(); } },
     ];

@@ -959,6 +959,9 @@ export default function Home() {
           if (a === "pick") handlePick();
           else if (a === "wizard") setWizardOpen(true);
           else if (a === "nearby") nearbyQuick();
+          else if (a === "profile") setProfileOpen(true);
+          else if (a === "leaderboard") setLeaderboardOpen(true);
+          else if (a === "chains") setGroupChains((v) => !v);
           else if (a === "blacklist") setShowBlacklist((v) => !v);
           else if (a === "theme") {
             const root = document.documentElement;
