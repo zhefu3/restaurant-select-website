@@ -44,7 +44,8 @@ export function CommandPalette({
       | "profile"
       | "leaderboard"
       | "chains"
-      | "compare",
+      | "compare"
+      | "card",
   ) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -86,6 +87,7 @@ export function CommandPalette({
       { key: "a-profile", icon: "📊", label: "我的美食档案", group: "操作", run: () => { onAction("profile"); close(); } },
       { key: "a-board", icon: "🏆", label: "我的美食榜", group: "操作", run: () => { onAction("leaderboard"); close(); } },
       { key: "a-compare", icon: "⚖️", label: "对比餐厅", group: "操作", run: () => { onAction("compare"); close(); } },
+      { key: "a-card", icon: "🎴", label: "生成美食卡（分享）", group: "操作", run: () => { onAction("card"); close(); } },
       { key: "a-chains", icon: "🔗", label: "合并 / 展开连锁", group: "操作", run: () => { onAction("chains"); close(); } },
       { key: "a-black", icon: "🚫", label: "黑名单视图", group: "操作", run: () => { onAction("blacklist"); close(); } },
       { key: "a-theme", icon: "🌓", label: "切换深色 / 浅色", group: "操作", run: () => { onAction("theme"); close(); } },
