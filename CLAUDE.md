@@ -56,6 +56,15 @@
 - **Telegram bot**（手机聊天选餐）：webhook `POST /api/telegram` 复用同一 chat-agent，无状态一问一答，`formatReply` 拼推荐（⭐评分/🏠离家/Google Maps 链接）；secret_token 校验来源；`/start`·`/help` 走欢迎不跑 Agent（不花钱）。**端到端需部署到公网 HTTPS + `TELEGRAM_BOT_TOKEN` + 注册 webhook**（Telegram 够不到 localhost，本地只能验 webhook 解析/忽略/校验逻辑）。配置步骤见 `.env.example`
 - **旅行/地区**：地区切换条；探索新地区=按城市(Text Search)/按定点(地图中心+N英里 Nearby)/按路线(Geocoding→Routes 真实驾车路线→沿途搜索，地图画 polyline)；**可配置门槛**(评分/评论数输入框)；地区互不污染、全部缓存；删除地区连带删店
 - **菜单+点评**：弹窗 📋菜单（拍照/贴文字→AI 归纳翻译成 分类→原文/中文/价格）、📝点评（私人文字点评）
+- **发现/决策/分享工具（2026-07-12 新增，全部零 API 成本、纯客户端）**：
+  - **浅色模式定为 B 柔灰 SaaS/Notion**（`globals.css :root`，中性冷灰底+纯白卡片+蓝焦点环；深色宇宙模式未动）
+  - **Beli 式评分徽章**（`lib/score.ts scoreTier`，卡片右侧彩色分数/预测合口味分；榜单/地图弹窗共用）
+  - **为你推荐精选栏**（`lib/picks.ts curatePicks` + `ForYouRail.tsx`，评分×距离×想去/小红书/合口味加权策展 8 家+上榜理由；🔄换一批=加权随机换一组；搜索/黑名单态隐藏）
+  - **🔗 合并连锁 toggle**（`lib/chains.ts` + `RestaurantList` 重构出 RestaurantCard/BranchRow/ChainGroupRow）：同名≥2 家折叠成可展开组，展开 fitBounds 框出各分店（`onFitBoundsReady`/`FitBoundsControl`），点分店 marker 自动展开
+  - **⌘K 命令面板**（`CommandPalette.tsx`）：操作/最近/地区/餐厅 分组；「最近」读 `lib/recent.ts` localStorage
+  - **一批 modal 工具**（入口都在 ⌘K，部分在头部/操作行）：📊 我的美食档案(`ProfileModal` 库/个人统计+菜系/价位分布+高分榜)、⚖️ 对比(`CompareModal` 2-3 家并排+绿色标最优+🏆帮我拍板加权选赢家)、🎴 美食卡(`ShareCardModal` 3:4 分享卡截图存)、🧭 附近还有啥(`NearbyModal` 锚点+haversine 最近 8 家)、📋 导出清单(`ExportModal` 想去/去过导成带 Maps 链接文本+复制)
+  - **时段问候语**（页头按小时）、**帮我选🎲换一家**原地重摇、**移动端操作行**窄屏堆叠+换行
+  - **⚠️ 地图平滑跳转试过又回退**（聚类脆：飞行途中移除聚类层能让 flyTo 动起来，但并发数据重载会把 cluster 挂成孤儿→marker 全消失；而切地区必然并发 load()。纯 flyTo 不加处理则完全不动。加上预览看不到动画，需真机现场调。详见「关键坑」11）
 - PWA（manifest+图标可装手机）；回到顶部按钮
 
 ## 关键坑（都踩过，别再踩）
