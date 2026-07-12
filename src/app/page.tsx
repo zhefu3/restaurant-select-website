@@ -855,6 +855,12 @@ export default function Home() {
                       <>· 📍 {pick.distanceKm.toFixed(1)} km</>
                     )}
                   </div>
+                  <button
+                    onClick={handlePick}
+                    className="mt-1.5 rounded-full border border-amber-300 dark:border-amber-800/60 px-2 py-0.5 text-xs text-amber-700 dark:text-amber-300 transition-colors hover:bg-amber-100 dark:hover:bg-amber-900/40"
+                  >
+                    🎲 换一家
+                  </button>
                 </div>
               </div>
             )}
