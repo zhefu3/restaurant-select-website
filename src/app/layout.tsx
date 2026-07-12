@@ -38,7 +38,11 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0f172a",
+  // 按系统深浅给出对应的浏览器/状态栏底色（浅色 SaaS 灰 / 深色宇宙）。
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f8f8fa" },
+    { media: "(prefers-color-scheme: dark)", color: "#0f172a" },
+  ],
   width: "device-width",
   initialScale: 1,
   // 地图双指缩放需要，别禁用户缩放
