@@ -424,6 +424,19 @@ export async function searchAreaForAgent(
   };
 }
 
+let homeRegionIdCache: number | null | undefined;
+/** home 地区 id（kind='home'）。进程内缓存一次。找不到返回 null。 */
+export async function getHomeRegionId(): Promise<number | null> {
+  if (homeRegionIdCache !== undefined) return homeRegionIdCache;
+  const r = await db
+    .select()
+    .from(regions)
+    .where(eq(regions.kind, "home"))
+    .get();
+  homeRegionIdCache = r?.id ?? null;
+  return homeRegionIdCache;
+}
+
 /** 删除一个旅行地区（连带里面的餐厅）。home 不可删。 */
 export async function deleteRegion(regionId: number): Promise<void> {
   const region = await db

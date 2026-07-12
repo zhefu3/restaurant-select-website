@@ -11,7 +11,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { listRestaurants } from "./restaurants";
 import { getDishRecommendation } from "./dish-recs";
 import { withDistanceFromHome, withDistanceFrom } from "./recommend";
-import { searchAreaForAgent } from "./travel";
+import { searchAreaForAgent, getHomeRegionId } from "./travel";
 import { searchRouteForAgent } from "./travel-route";
 import { buildTasteProfile } from "./taste";
 import { cuisineGroup, cuisineLabel } from "./cuisine";
@@ -551,10 +551,17 @@ export async function* streamChatAgent(
   // 推荐 id → 完整餐厅对象（带距离），按推荐顺序
   if (ctx.recommendedIds.size > 0) {
     const all = withDistanceFromHome(await listRestaurants({}));
+    const homeId = await getHomeRegionId();
     const byId = new Map(all.map((r) => [r.id, r]));
     const items = [...ctx.recommendedIds]
       .map((id) => byId.get(id))
-      .filter((r): r is RestaurantView => Boolean(r));
+      .filter((r): r is RestaurantView => Boolean(r))
+      // 外地（非 home 地区）的店抹掉离家距离——否则卡片会显示「🏠1157km」这种无意义噪声
+      .map((r) =>
+        r.regionId == null || r.regionId === homeId
+          ? r
+          : { ...r, distanceKm: undefined },
+      );
     if (items.length) yield { type: "recommendations", items };
   }
 
