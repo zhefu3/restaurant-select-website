@@ -66,7 +66,7 @@ const tools: Anthropic.Tool[] = [
   {
     name: "search_restaurants",
     description:
-      "在用户的餐厅库里按条件搜索。返回匹配的真实餐厅（含 id、评分、菜系、离家距离等）。这是找店的唯一途径。",
+      "在用户**南湾本地**餐厅库里按条件搜索。返回匹配的真实餐厅（含 id、评分、菜系、离家距离等）。本地找店走这个；外地/出差/旅游用 search_area、路上用 search_along_route。",
     input_schema: {
       type: "object",
       properties: {
@@ -209,6 +209,7 @@ interface ChatCtx {
   recommendedIds: Set<number>;
   actions: ProposedAction[];
   paidTravelSearches: number; // 本轮已真花钱的外地/路线搜索次数（缓存命中不计）
+  regionsChanged: boolean; // 旅行工具新建/刷新过地区 → 收尾时通知前端刷新地区条
 }
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -220,7 +221,10 @@ async function runTool(
   const all = withDistanceFromHome(await listRestaurants({}));
 
   if (name === "search_restaurants") {
-    let list = all.slice();
+    // 只搜 home 地区（region 为空的旧数据也算 home）；外地/路线交给 search_area/search_along_route。
+    // 否则"推荐几家高分店"这类不带地点的问法会把西雅图/芝加哥的旅行店混进来。
+    const homeId = await getHomeRegionId();
+    let list = all.filter((r) => r.regionId == null || r.regionId === homeId);
     if (input.cuisine)
       list = list.filter((r) => cuisineGroup(r.cuisine) === input.cuisine);
     if (input.city)
@@ -346,7 +350,10 @@ async function runTool(
         note: `本轮对话付费搜索已达 ${MAX_PAID_TRAVEL_SEARCHES} 次上限，且「${regionName}」没有缓存。告诉用户下条消息再问即可。`,
       });
 
-    if (!cached) ctx.paidTravelSearches += 1;
+    if (!cached) {
+      ctx.paidTravelSearches += 1;
+      ctx.regionsChanged = true; // 建了/刷新了地区 → 收尾通知前端刷新地区条
+    }
 
     if (regionId == null)
       return JSON.stringify({
@@ -445,6 +452,7 @@ export type ChatEvent =
   | { type: "status"; text: string } // 工具调用中的状态提示
   | { type: "recommendations"; items: RestaurantView[] } // 推荐卡片
   | { type: "action"; action: ProposedAction } // 待确认的写操作
+  | { type: "regions_changed" } // 旅行工具新建/更新了地区，前端刷新地区条
   | { type: "done"; reply: string }; // 收尾（reply=完整文本）
 
 export interface StreamChatOptions {
@@ -482,6 +490,7 @@ export async function* streamChatAgent(
     recommendedIds: new Set<number>(),
     actions: [],
     paidTravelSearches: 0,
+    regionsChanged: false,
   };
   let totalCost = 0;
   let reply = "";
@@ -566,6 +575,8 @@ export async function* streamChatAgent(
   }
 
   for (const a of ctx.actions) yield { type: "action", action: a };
+
+  if (ctx.regionsChanged) yield { type: "regions_changed" };
 
   yield { type: "done", reply: reply || "（没有生成回复）" };
 }

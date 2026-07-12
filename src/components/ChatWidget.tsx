@@ -64,9 +64,11 @@ function actionLabel(a: ProposedAction): string {
 export function ChatWidget({
   onLocate,
   onDataChanged,
+  onRegionsChanged,
 }: {
   onLocate: (r: RestaurantView) => void;
   onDataChanged?: () => void;
+  onRegionsChanged?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -231,6 +233,9 @@ export function ChatWidget({
         break;
       case "recommendations":
         patchLast((m) => ({ ...m, recommendations: ev.items ?? [] }));
+        break;
+      case "regions_changed":
+        onRegionsChanged?.(); // 旅行工具建了新地区 → 刷新左侧地区条
         break;
       case "action":
         patchLast((m) => {

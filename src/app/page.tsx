@@ -1036,7 +1036,11 @@ export default function Home() {
         regionName={activeIsHome ? "我的湾区" : (activeRegion?.name ?? "")}
       />
       {!PUBLIC_DEMO && (
-        <ChatWidget onLocate={handleChatLocate} onDataChanged={load} />
+        <ChatWidget
+          onLocate={handleChatLocate}
+          onDataChanged={load}
+          onRegionsChanged={loadRegions}
+        />
       )}
       <CommandPalette
         restaurants={withMy}
