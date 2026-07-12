@@ -58,6 +58,7 @@ import { StarField } from "@/components/StarField";
 import { CommandPalette } from "@/components/CommandPalette";
 import { MoodChips } from "@/components/MoodChips";
 import { LeaderboardModal } from "@/components/LeaderboardModal";
+import { ProfileModal } from "@/components/ProfileModal";
 import { fireConfetti } from "@/lib/confetti";
 import { ListSkeleton } from "@/components/ListSkeleton";
 import { RegionInsights } from "@/components/RegionInsights";
@@ -136,6 +137,7 @@ export default function Home() {
   const [focusId, setFocusId] = useState<number | null>(null);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const [duelOpen, setDuelOpen] = useState(false);
   // PWA 快捷方式：?action=wizard / ?action=pick（pick 要等数据加载完再执行）。
   const [pendingAction, setPendingAction] = useState<string | null>(null);
@@ -602,6 +604,14 @@ export default function Home() {
               <Search className="h-3.5 w-3.5" />
               <kbd className="font-sans">⌘K</kbd>
             </button>
+            <button
+              onClick={() => setProfileOpen(true)}
+              title="我的美食档案"
+              aria-label="我的美食档案"
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-input text-sm transition-colors hover:bg-accent"
+            >
+              📊
+            </button>
             <ThemeToggle />
           </div>
         </div>
@@ -929,6 +939,14 @@ export default function Home() {
         open={leaderboardOpen}
         onClose={() => setLeaderboardOpen(false)}
         restaurants={withMy}
+        onLocate={setFocusId}
+      />
+      <ProfileModal
+        open={profileOpen}
+        onClose={() => setProfileOpen(false)}
+        restaurants={withMy}
+        regions={regions}
+        regionName={activeIsHome ? "我的湾区" : (activeRegion?.name ?? "")}
         onLocate={setFocusId}
       />
       {!PUBLIC_DEMO && <ChatWidget onLocate={setFocusId} onDataChanged={load} />}
