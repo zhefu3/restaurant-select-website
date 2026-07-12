@@ -23,6 +23,7 @@ export function CompareModal({
   useEscape(open, onClose);
   const [ids, setIds] = useState<number[]>([]);
   const [q, setQ] = useState("");
+  const [winnerId, setWinnerId] = useState<number | null>(null);
 
   const picked = useMemo(
     () =>
@@ -66,8 +67,31 @@ export function CompareModal({
     if (ids.length >= MAX || ids.includes(id)) return;
     setIds((p) => [...p, id]);
     setQ("");
+    setWinnerId(null);
   };
-  const remove = (id: number) => setIds((p) => p.filter((x) => x !== id));
+  const remove = (id: number) => {
+    setIds((p) => p.filter((x) => x !== id));
+    setWinnerId(null);
+  };
+
+  // 帮我拍板：评分质量 × 距离邻近 × 合口味加权，选一个赢家。
+  const decide = () => {
+    let bestId: number | null = null;
+    let bestW = -Infinity;
+    for (const p of picked) {
+      const rating = p.rating ?? 4.2;
+      const dist = p.distanceFromMeKm ?? p.distanceKm ?? 12;
+      const w =
+        Math.exp((rating - 4.2) * 2) *
+        (1 / (1 + dist / 6)) *
+        (p.tasteScore != null ? 0.7 + p.tasteScore / 100 : 1);
+      if (w > bestW) {
+        bestW = w;
+        bestId = p.id;
+      }
+    }
+    setWinnerId(bestId);
+  };
 
   const cellBest = "font-semibold text-emerald-600 dark:text-emerald-400";
 
@@ -140,9 +164,18 @@ export function CompareModal({
               {picked.map((r) => (
                 <div
                   key={r.id}
-                  className="flex flex-col overflow-hidden rounded-xl border"
+                  className={`flex flex-col overflow-hidden rounded-xl border ${
+                    winnerId === r.id
+                      ? "border-amber-400 ring-2 ring-amber-400"
+                      : ""
+                  }`}
                 >
                   <div className="relative h-24 w-full">
+                    {winnerId === r.id && (
+                      <span className="absolute left-1 top-1 z-10 rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-bold text-slate-900">
+                        🏆 拍板
+                      </span>
+                    )}
                     <div
                       className="flex h-full w-full items-center justify-center text-3xl"
                       style={{
@@ -234,6 +267,17 @@ export function CompareModal({
             </div>
           )}
         </div>
+
+        {picked.length >= 2 && (
+          <div className="border-t px-4 py-3">
+            <button
+              onClick={decide}
+              className="w-full rounded-lg bg-primary py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+            >
+              🏆 帮我拍板
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
