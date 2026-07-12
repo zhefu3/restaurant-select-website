@@ -131,6 +131,9 @@ export function CompareModal({
               autoFocus
               value={q}
               onChange={(e) => setQ(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && matches.length > 0) add(matches[0].id);
+              }}
               placeholder={`搜店名 / 菜系加入对比（已选 ${ids.length}/${MAX}）…`}
               className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
