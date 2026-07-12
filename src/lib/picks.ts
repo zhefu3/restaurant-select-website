@@ -46,25 +46,61 @@ function pickReason(r: RestaurantView): { reason: string; reasonKind: CuratedPic
   return { reason: "🔥 值得一试", reasonKind: "top" };
 }
 
+/** 小巧的可复现随机数（mulberry32），用于「换一批」的确定性洗牌。 */
+function rng(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
 /**
  * 从候选里策展出 top N「为你推荐」。
  * 默认排除去过的（鼓励尝新）和评分过低的，保证是「新鲜好店」。
+ * shuffle=0 时取分数最高的 N 家（稳定）；shuffle>0 时在高分候选池里按分数加权随机抽 N 家，
+ * 用于「换一批」——每次换一批口味相近但不重样。
  */
 export function curatePicks(
   list: RestaurantView[],
   limit = 8,
+  shuffle = 0,
 ): CuratedPick[] {
-  const pool = list.filter(
-    (r) =>
-      !r.visited &&
-      r.lat != null &&
-      r.lng != null &&
-      // 有评分信号或明确想去的才进池，避免推没信息的空店
-      ((r.rating ?? 0) >= 4.3 || r.wantToEat || r.hasXhsNote),
-  );
-  return pool
+  const scored = list
+    .filter(
+      (r) =>
+        !r.visited &&
+        r.lat != null &&
+        r.lng != null &&
+        // 有评分信号或明确想去的才进池，避免推没信息的空店
+        ((r.rating ?? 0) >= 4.3 || r.wantToEat || r.hasXhsNote),
+    )
     .map((r) => ({ r, s: scorePick(r) }))
-    .sort((a, b) => b.s - a.s)
-    .slice(0, limit)
-    .map(({ r }) => ({ r, ...pickReason(r) }));
+    .sort((a, b) => b.s - a.s);
+
+  let chosen: { r: RestaurantView }[];
+  if (shuffle <= 0) {
+    chosen = scored.slice(0, limit);
+  } else {
+    // 在 top(3N) 候选里按分数加权、不放回地抽 limit 家。
+    const cand = scored.slice(0, Math.max(limit, limit * 3));
+    const rand = rng(shuffle * 2654435761);
+    const bag = cand.map((c) => ({ ...c }));
+    chosen = [];
+    while (chosen.length < limit && bag.length > 0) {
+      const total = bag.reduce((sum, c) => sum + c.s, 0);
+      let roll = rand() * total;
+      let idx = 0;
+      for (; idx < bag.length; idx++) {
+        roll -= bag[idx].s;
+        if (roll <= 0) break;
+      }
+      const picked = bag.splice(Math.min(idx, bag.length - 1), 1)[0];
+      chosen.push(picked);
+    }
+  }
+  return chosen.map(({ r }) => ({ r, ...pickReason(r) }));
 }

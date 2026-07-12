@@ -6,7 +6,7 @@
  * 只在「发现态」出现（没搜索、店够多时），用户一开始筛选就让位给正经列表。
  */
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { cuisineEmoji, cuisineColor, cuisineLabel } from "@/lib/cuisine";
 import { curatePicks } from "@/lib/picks";
 import type { RestaurantView } from "@/lib/types";
@@ -20,7 +20,16 @@ export function ForYouRail({
   onFocus?: (id: number) => void;
   onHover?: (id: number | null) => void;
 }) {
-  const picks = useMemo(() => curatePicks(restaurants, 8), [restaurants]);
+  const [shuffle, setShuffle] = useState(0);
+  const picks = useMemo(
+    () => curatePicks(restaurants, 8, shuffle),
+    [restaurants, shuffle],
+  );
+  // 候选够多才给「换一批」（否则换来换去都一样）。
+  const canShuffle = useMemo(
+    () => curatePicks(restaurants, 24).length > 8,
+    [restaurants],
+  );
   if (picks.length < 4) return null; // 太少就不喧宾夺主
 
   return (
@@ -30,6 +39,15 @@ export function ForYouRail({
         <span className="text-xs font-normal text-muted-foreground">
           · 挑了 {picks.length} 家今天就想让你去
         </span>
+        {canShuffle && (
+          <button
+            onClick={() => setShuffle((s) => s + 1)}
+            className="ml-auto rounded-full border border-input px-2 py-0.5 text-xs font-normal text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            title="换一批推荐"
+          >
+            🔄 换一批
+          </button>
+        )}
       </div>
       <div className="-mx-1 flex gap-2.5 overflow-x-auto px-1 pb-2 [scrollbar-width:thin]">
         {picks.map(({ r, reason }) => (
