@@ -9,6 +9,7 @@
 import { useMemo, useState } from "react";
 import { cuisineEmoji, cuisineColor, cuisineLabel } from "@/lib/cuisine";
 import { curatePicks } from "@/lib/picks";
+import { formatDistance } from "@/lib/utils";
 import type { RestaurantView } from "@/lib/types";
 
 export function ForYouRail({
@@ -100,8 +101,8 @@ export function ForYouRail({
               {(r.distanceFromMeKm ?? r.distanceKm) != null && (
                 <div className="text-[11px] text-muted-foreground/80">
                   {r.distanceFromMeKm != null
-                    ? `📍 ${r.distanceFromMeKm.toFixed(1)} km`
-                    : `🏠 ${r.distanceKm!.toFixed(1)} km`}
+                    ? `📍 ${formatDistance(r.distanceFromMeKm)}`
+                    : `🏠 ${formatDistance(r.distanceKm!)}`}
                 </div>
               )}
             </div>

@@ -7,6 +7,7 @@ import { cuisineLabel, cuisineEmoji } from "@/lib/cuisine";
 import { haversineKm } from "@/lib/geo";
 import { type RestaurantView } from "@/lib/types";
 import { useEscape } from "@/lib/use-escape";
+import { formatDistance } from "@/lib/utils";
 
 export function NearbyModal({
   open,
@@ -144,7 +145,7 @@ export function NearbyModal({
                     </div>
                   </div>
                   <span className="shrink-0 text-xs font-medium tabular-nums text-muted-foreground">
-                    {km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`}
+                    {formatDistance(km)}
                   </span>
                 </button>
               ))}

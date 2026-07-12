@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { cuisineLabel, cuisineEmoji, cuisineColor } from "@/lib/cuisine";
 import { googleMapsUrl, isRecommended, type RestaurantView } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, formatDistance } from "@/lib/utils";
 import { scoreTier } from "@/lib/score";
 import { groupChains, type ListEntry } from "@/lib/chains";
 
@@ -140,10 +140,10 @@ function RestaurantCard({
               </span>
             )}
             {r.cuisine && <>· {cuisineLabel(r.cuisine)} </>}
-            {r.distanceKm != null && <>· 🏠 {r.distanceKm.toFixed(1)} km </>}
+            {r.distanceKm != null && <>· 🏠 {formatDistance(r.distanceKm)} </>}
             {r.distanceFromMeKm != null && (
               <span className="text-blue-600 dark:text-blue-400">
-                · 📍 {r.distanceFromMeKm.toFixed(1)} km
+                · 📍 {formatDistance(r.distanceFromMeKm)}
               </span>
             )}
           </div>
@@ -222,10 +222,10 @@ function BranchRow({
                 · {"¥".repeat(r.priceLevel)}{" "}
               </span>
             )}
-            {r.distanceKm != null && <>· 🏠 {r.distanceKm.toFixed(1)} km </>}
+            {r.distanceKm != null && <>· 🏠 {formatDistance(r.distanceKm)} </>}
             {r.distanceFromMeKm != null && (
               <span className="text-blue-600 dark:text-blue-400">
-                · 📍 {r.distanceFromMeKm.toFixed(1)} km
+                · 📍 {formatDistance(r.distanceFromMeKm)}
               </span>
             )}
           </div>
@@ -317,7 +317,7 @@ function ChainGroupRow({
                 </span>
               )}
               {first.cuisine && <>· {cuisineLabel(first.cuisine)} </>}
-              {nearest != null && <>· 最近 {nearest.toFixed(1)} km</>}
+              {nearest != null && <>· 最近 {formatDistance(nearest)}</>}
             </div>
             <div className="text-xs text-muted-foreground/70">
               {expanded ? "收起分店" : "点开看各家分店并在地图上框出"}

@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { cuisineLabel, cuisineEmoji, cuisineColor } from "@/lib/cuisine";
 import { googleMapsUrl, type RestaurantView } from "@/lib/types";
 import { useEscape } from "@/lib/use-escape";
+import { formatDistance } from "@/lib/utils";
 
 const MAX = 3;
 
@@ -243,7 +244,7 @@ export function CompareModal({
                         }
                       >
                         {(r.distanceFromMeKm ?? r.distanceKm) != null
-                          ? `${(r.distanceFromMeKm ?? r.distanceKm)!.toFixed(1)} km`
+                          ? formatDistance((r.distanceFromMeKm ?? r.distanceKm)!)
                           : "—"}
                       </span>
                     </Row>

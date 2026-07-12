@@ -70,6 +70,7 @@ import { RegionInsights } from "@/components/RegionInsights";
 import { ForYouRail } from "@/components/ForYouRail";
 import { countChains } from "@/lib/chains";
 import { pushRecent } from "@/lib/recent";
+import { formatDistance } from "@/lib/utils";
 
 type UrlInit = {
   regionId: number | null;
@@ -860,7 +861,7 @@ export default function Home() {
                     {pick.rating != null && <>⭐ {pick.rating} </>}
                     {pick.cuisine && <>· {cuisineLabel(pick.cuisine)} </>}
                     {pick.distanceKm != null && (
-                      <>· 📍 {pick.distanceKm.toFixed(1)} km</>
+                      <>· 📍 {formatDistance(pick.distanceKm)}</>
                     )}
                   </div>
                   <button
