@@ -63,6 +63,7 @@ import { CompareModal } from "@/components/CompareModal";
 import { ShareCardModal } from "@/components/ShareCardModal";
 import { NearbyModal } from "@/components/NearbyModal";
 import { ExportModal } from "@/components/ExportModal";
+import { HeaderTools } from "@/components/HeaderTools";
 import { fireConfetti } from "@/lib/confetti";
 import { ListSkeleton } from "@/components/ListSkeleton";
 import { RegionInsights } from "@/components/RegionInsights";
@@ -623,14 +624,16 @@ export default function Home() {
               <Search className="h-3.5 w-3.5" />
               <kbd className="font-sans">⌘K</kbd>
             </button>
-            <button
-              onClick={() => setProfileOpen(true)}
-              title="我的美食档案"
-              aria-label="我的美食档案"
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-input text-sm transition-colors hover:bg-accent"
-            >
-              📊
-            </button>
+            <HeaderTools
+              items={[
+                { key: "profile", icon: "📊", label: "我的美食档案", run: () => setProfileOpen(true) },
+                { key: "compare", icon: "⚖️", label: "对比餐厅", run: () => setCompareOpen(true) },
+                { key: "nearby", icon: "🧭", label: "附近还有啥", run: () => setNearbyOpen(true) },
+                { key: "card", icon: "🎴", label: "生成美食卡", run: () => setCardOpen(true) },
+                { key: "export", icon: "📋", label: "导出清单", run: () => setExportOpen(true) },
+                { key: "board", icon: "🏆", label: "我的美食榜", run: () => setLeaderboardOpen(true) },
+              ]}
+            />
             <ThemeToggle />
           </div>
         </div>
