@@ -57,6 +57,9 @@ export function WizardModal({
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="今晚吃什么"
         className="w-full max-w-md rounded-xl bg-background p-5 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >

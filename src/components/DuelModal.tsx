@@ -73,6 +73,9 @@ export function DuelModal({
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="排位赛"
         className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-xl bg-background p-5 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
