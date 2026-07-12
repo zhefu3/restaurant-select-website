@@ -80,6 +80,7 @@ export function NearbyModal({
 
         <div className="relative border-b px-4 py-2.5">
           <input
+            autoFocus
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder={anchor ? `锚点：${anchor.name}（重新搜可换）` : "搜一家店做锚点…"}

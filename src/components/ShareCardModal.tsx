@@ -66,6 +66,7 @@ export function ShareCardModal({
         {/* 选店 */}
         <div className="relative border-b px-4 py-2.5">
           <input
+            autoFocus
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="搜一家店做成卡片…"

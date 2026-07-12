@@ -124,6 +124,7 @@ export function CompareModal({
         {ids.length < MAX && (
           <div className="relative border-b px-4 py-2.5">
             <input
+              autoFocus
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder={`搜店名 / 菜系加入对比（已选 ${ids.length}/${MAX}）…`}
