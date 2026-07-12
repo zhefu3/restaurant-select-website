@@ -66,9 +66,26 @@ export function FilterBar({
         <input
           value={localSearch}
           onChange={(e) => setLocalSearch(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Escape" && localSearch) {
+              e.preventDefault();
+              setLocalSearch("");
+            }
+          }}
           placeholder="搜索店名 / 菜系 / 地址…（按 /）"
-          className="h-9 w-full rounded-md border border-input bg-background pl-8 pr-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="h-9 w-full rounded-md border border-input bg-background pl-8 pr-8 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
+        {localSearch && (
+          <button
+            type="button"
+            onClick={() => setLocalSearch("")}
+            title="清空搜索"
+            aria-label="清空搜索"
+            className="absolute right-2 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            ✕
+          </button>
+        )}
       </div>
 
       {/* 菜系 + 城市 */}
