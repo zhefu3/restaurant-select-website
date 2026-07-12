@@ -6,7 +6,7 @@
  */
 
 import "server-only";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { regions, restaurants } from "@/db/schema";
 import { searchAlongRoute, isRealRestaurant } from "./google-places";
@@ -212,5 +212,101 @@ export async function searchRoute(
     saved,
     distanceMiles: meta.distanceMiles,
     durationMinutes: meta.durationMinutes,
+  };
+}
+
+// 与 travel.ts 一致：Agent 视为「已缓存」的新鲜期。
+const AGENT_CACHE_DAYS = 30;
+
+export interface AgentRouteResult {
+  regionId: number | null;
+  regionName: string;
+  cached: boolean;
+  budgetBlocked?: boolean;
+  centerLat: number | null;
+  centerLng: number | null;
+  distanceMiles?: number;
+  durationMinutes?: number;
+}
+
+/**
+ * 聊天 Agent 专用「沿路线找餐厅」，缓存优先。
+ * - 命中同名 route 地区 + N 天内刷新过 + 有店 → 读缓存不花钱。
+ * - 未命中且 allowPaid → 调 searchRoute（Geocoding×2 + Routes + Places）花钱。
+ * - 未命中且 !allowPaid → budgetBlocked=true。
+ */
+export async function searchRouteForAgent(
+  from: string,
+  to: string,
+  opts: { allowPaid: boolean; minRating?: number; minReviews?: number },
+): Promise<AgentRouteResult> {
+  const regionName = `${from} → ${to}`;
+  const existing = await db
+    .select()
+    .from(regions)
+    .where(eq(regions.name, regionName))
+    .get();
+  if (existing) {
+    const fresh =
+      existing.refreshedAt != null &&
+      Date.now() - new Date(existing.refreshedAt).getTime() <
+        AGENT_CACHE_DAYS * 864e5;
+    const cnt = await db
+      .select({ c: sql<number>`count(*)` })
+      .from(restaurants)
+      .where(eq(restaurants.regionId, existing.id))
+      .get();
+    if (fresh && Number(cnt?.c ?? 0) > 0) {
+      let distanceMiles: number | undefined;
+      let durationMinutes: number | undefined;
+      try {
+        const m = JSON.parse(existing.meta ?? "{}");
+        distanceMiles = m.distanceMiles;
+        durationMinutes = m.durationMinutes;
+      } catch {
+        /* meta 坏了忽略 */
+      }
+      return {
+        regionId: existing.id,
+        regionName,
+        cached: true,
+        centerLat: existing.centerLat,
+        centerLng: existing.centerLng,
+        distanceMiles,
+        durationMinutes,
+      };
+    }
+  }
+
+  if (!opts.allowPaid) {
+    return {
+      regionId: null,
+      regionName,
+      cached: false,
+      budgetBlocked: true,
+      centerLat: null,
+      centerLng: null,
+    };
+  }
+
+  const res = await searchRoute({
+    from,
+    to,
+    minRating: opts.minRating,
+    minReviews: opts.minReviews,
+  });
+  const reg = await db
+    .select()
+    .from(regions)
+    .where(eq(regions.id, res.regionId))
+    .get();
+  return {
+    regionId: res.regionId,
+    regionName: res.regionName,
+    cached: false,
+    centerLat: reg?.centerLat ?? null,
+    centerLng: reg?.centerLng ?? null,
+    distanceMiles: res.distanceMiles,
+    durationMinutes: res.durationMinutes,
   };
 }

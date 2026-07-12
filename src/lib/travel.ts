@@ -347,6 +347,83 @@ export async function searchPolygon(
   };
 }
 
+// 聊天 Agent 视为「已缓存」的新鲜期：同名地区 N 天内搜过就直接读库、不再花钱。
+const AGENT_CACHE_DAYS = 30;
+
+export interface AgentAreaResult {
+  regionId: number | null;
+  regionName: string;
+  cached: boolean; // true=读缓存没花钱；false=这次真调了 Google
+  budgetBlocked?: boolean; // 缓存未命中但本轮不允许再花钱
+  centerLat: number | null;
+  centerLng: number | null;
+}
+
+/**
+ * 聊天 Agent 专用「查一片区域」（city 模式 Text Search），缓存优先。
+ * - 命中同名 + N 天内刷新过 + 有店的地区 → 直接读缓存，cached=true，不花钱。
+ * - 未命中且 allowPaid → 调 searchArea 花钱搜一次，cached=false。
+ * - 未命中且 !allowPaid（本轮付费已达上限）→ budgetBlocked=true，不花钱。
+ */
+export async function searchAreaForAgent(
+  query: string,
+  opts: { allowPaid: boolean; minRating?: number; minReviews?: number },
+): Promise<AgentAreaResult> {
+  const name = query.trim();
+  if (!name) throw new Error("query 为空");
+
+  const existing = await db
+    .select()
+    .from(regions)
+    .where(eq(regions.name, name))
+    .get();
+  if (existing) {
+    const fresh =
+      existing.refreshedAt != null &&
+      Date.now() - new Date(existing.refreshedAt).getTime() <
+        AGENT_CACHE_DAYS * 864e5;
+    const cnt = await db
+      .select({ c: sql<number>`count(*)` })
+      .from(restaurants)
+      .where(eq(restaurants.regionId, existing.id))
+      .get();
+    if (fresh && Number(cnt?.c ?? 0) > 0) {
+      return {
+        regionId: existing.id,
+        regionName: existing.name,
+        cached: true,
+        centerLat: existing.centerLat,
+        centerLng: existing.centerLng,
+      };
+    }
+  }
+
+  if (!opts.allowPaid) {
+    return {
+      regionId: null,
+      regionName: name,
+      cached: false,
+      budgetBlocked: true,
+      centerLat: null,
+      centerLng: null,
+    };
+  }
+
+  const res = await searchArea({
+    mode: "city",
+    query: name,
+    minRating: opts.minRating,
+    minReviews: opts.minReviews,
+  });
+  return {
+    regionId: res.regionId,
+    regionName: res.regionName,
+    cached: false,
+    centerLat: res.centerLat,
+    centerLng: res.centerLng,
+  };
+}
+
 /** 删除一个旅行地区（连带里面的餐厅）。home 不可删。 */
 export async function deleteRegion(regionId: number): Promise<void> {
   const region = await db
