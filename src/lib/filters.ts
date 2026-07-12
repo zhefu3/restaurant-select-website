@@ -5,7 +5,7 @@ import type { RestaurantView } from "./types";
 
 export interface ClientFilters {
   search: string;
-  cuisine: string; // "all" 或菜系大类名
+  cuisines: string[]; // 选中的菜系大类名；空 = 全部菜系（多选）
   city: string; // "all" 或城市名
   prices: number[]; // 选中的价位(1-4)；空 = 不限
   maxDistanceKm: number | null; // null = 不限
@@ -17,7 +17,7 @@ export interface ClientFilters {
 
 export const emptyClientFilters: ClientFilters = {
   search: "",
-  cuisine: "all",
+  cuisines: [],
   city: "all",
   prices: [],
   maxDistanceKm: null,
@@ -118,7 +118,11 @@ export function applyClientFilters(
       const hay = `${r.name} ${r.address ?? ""} ${cuisineLabel(r.cuisine)} ${cuisineGroup(r.cuisine)}`.toLowerCase();
       if (!hay.includes(q)) return false;
     }
-    if (f.cuisine !== "all" && cuisineGroup(r.cuisine) !== f.cuisine) {
+    if (
+      f.cuisines &&
+      f.cuisines.length > 0 &&
+      !f.cuisines.includes(cuisineGroup(r.cuisine))
+    ) {
       return false;
     }
     if (f.city !== "all" && extractCity(r.address) !== f.city) return false;

@@ -75,8 +75,15 @@ export function FilterBar({
       <div className="flex flex-wrap items-center gap-3">
         <CuisineFilter
           options={cuisineOptions}
-          value={filters.cuisine}
-          onChange={(v) => set({ cuisine: v })}
+          values={filters.cuisines}
+          onToggle={(v) =>
+            set({
+              cuisines: filters.cuisines.includes(v)
+                ? filters.cuisines.filter((x) => x !== v)
+                : [...filters.cuisines, v],
+            })
+          }
+          onClear={() => set({ cuisines: [] })}
         />
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">城市：</span>

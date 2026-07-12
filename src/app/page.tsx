@@ -75,7 +75,7 @@ type UrlInit = {
   visit: FilterState["visit"];
   source: FilterState["source"];
   search: string;
-  cuisine: string;
+  cuisines: string[];
   city: string;
   prices: number[];
   maxDistanceKm: number | null;
@@ -97,7 +97,7 @@ function parseUrlState(): UrlInit | null {
     visit: (p.get("visit") as FilterState["visit"]) ?? "all",
     source: (p.get("source") as FilterState["source"]) ?? "all",
     search: p.get("q") ?? "",
-    cuisine: p.get("cuisine") ?? "all",
+    cuisines: (p.get("cuisine") ?? "").split(",").filter(Boolean),
     city: p.get("city") ?? "all",
     prices: (p.get("price") ?? "")
       .split(",")
@@ -354,7 +354,7 @@ export default function Home() {
         setFilters({ visit: u.visit, source: u.source });
       setClientFilters({
         search: u.search,
-        cuisine: u.cuisine,
+        cuisines: u.cuisines,
         city: u.city,
         prices: u.prices,
         maxDistanceKm: u.maxDistanceKm,
@@ -392,7 +392,8 @@ export default function Home() {
     if (filters.visit !== "all") p.set("visit", filters.visit);
     if (filters.source !== "all") p.set("source", filters.source);
     if (clientFilters.search) p.set("q", clientFilters.search);
-    if (clientFilters.cuisine !== "all") p.set("cuisine", clientFilters.cuisine);
+    if (clientFilters.cuisines.length)
+      p.set("cuisine", clientFilters.cuisines.join(","));
     if (clientFilters.city !== "all") p.set("city", clientFilters.city);
     if (clientFilters.prices.length) p.set("price", clientFilters.prices.join(","));
     if (clientFilters.maxDistanceKm != null)
@@ -472,7 +473,7 @@ export default function Home() {
     filters.visit !== "all" ||
     filters.source !== "all" ||
     clientFilters.search !== "" ||
-    clientFilters.cuisine !== "all" ||
+    clientFilters.cuisines.length > 0 ||
     clientFilters.city !== "all" ||
     clientFilters.prices.length > 0 ||
     clientFilters.maxDistanceKm != null ||
@@ -503,10 +504,14 @@ export default function Home() {
       label: `搜：${clientFilters.search}`,
       clear: () => setClientFilters((c) => ({ ...c, search: "" })),
     });
-  if (clientFilters.cuisine !== "all")
+  for (const cg of clientFilters.cuisines)
     filterChips.push({
-      label: clientFilters.cuisine,
-      clear: () => setClientFilters((c) => ({ ...c, cuisine: "all" })),
+      label: cg,
+      clear: () =>
+        setClientFilters((c) => ({
+          ...c,
+          cuisines: c.cuisines.filter((x) => x !== cg),
+        })),
     });
   if (clientFilters.city !== "all")
     filterChips.push({
