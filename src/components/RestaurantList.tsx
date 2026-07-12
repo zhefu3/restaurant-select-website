@@ -357,6 +357,8 @@ export function RestaurantList({
   onHover,
   groupChains: doGroup = false,
   onShowBranches,
+  filtersActive = false,
+  onClearFilters,
 }: {
   restaurants: RestaurantView[];
   focusId?: number | null;
@@ -367,6 +369,9 @@ export function RestaurantList({
   groupChains?: boolean;
   /** 展开某连锁时，把这些分店在地图上框出来。 */
   onShowBranches?: (branches: RestaurantView[]) => void;
+  /** 有筛选在生效 + 清空回调：空结果时直接给「清空筛选」按钮，省得回头找。 */
+  filtersActive?: boolean;
+  onClearFilters?: () => void;
 }) {
   const focusedRef = useRef<HTMLDivElement>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -405,6 +410,14 @@ export function RestaurantList({
         <div className="text-3xl">🍽️</div>
         <p className="mt-2">这里还没有符合条件的餐厅</p>
         <p className="mt-1 text-xs">试试放宽筛选、换个菜系，或切换到别的地区。</p>
+        {filtersActive && onClearFilters && (
+          <button
+            onClick={onClearFilters}
+            className="mt-3 rounded-full border border-input px-3 py-1 text-xs text-foreground transition-colors hover:bg-accent"
+          >
+            清空筛选 ✕
+          </button>
+        )}
       </div>
     );
   }

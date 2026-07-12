@@ -958,6 +958,8 @@ export default function Home() {
                 onHover={handleHover}
                 groupChains={groupChains}
                 onShowBranches={handleShowBranches}
+                filtersActive={filtersActive}
+                onClearFilters={clearFilters}
               />
             )}
           </section>
