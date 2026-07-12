@@ -218,13 +218,18 @@ async function runTool(
   input: any,
   ctx: ChatCtx,
 ): Promise<string> {
-  const all = withDistanceFromHome(await listRestaurants({}));
-
   if (name === "search_restaurants") {
     // 只搜 home 地区（region 为空的旧数据也算 home）；外地/路线交给 search_area/search_along_route。
-    // 否则"推荐几家高分店"这类不带地点的问法会把西雅图/芝加哥的旅行店混进来。
+    // 直接按 home 地区下推 SQL 查，不再全表拉回内存再过滤（否则"推荐几家高分店"这类
+    // 不带地点的问法还会把西雅图/芝加哥的旅行店混进来）。
     const homeId = await getHomeRegionId();
-    let list = all.filter((r) => r.regionId == null || r.regionId === homeId);
+    let list = withDistanceFromHome(
+      await listRestaurants(
+        homeId != null
+          ? { regionId: homeId, includeNullRegion: true, withPersonal: false }
+          : { withPersonal: false },
+      ),
+    );
     if (input.cuisine)
       list = list.filter((r) => cuisineGroup(r.cuisine) === input.cuisine);
     if (input.city)
@@ -276,7 +281,9 @@ async function runTool(
   }
 
   if (name === "get_taste_profile") {
-    const profile = buildTasteProfile(all);
+    // 口味画像基于用户的打分（分布在各地区），按需查一次、不带个人层。
+    const rated = await listRestaurants({ withPersonal: false });
+    const profile = buildTasteProfile(rated);
     if (!profile)
       return JSON.stringify({
         available: false,
@@ -363,7 +370,7 @@ async function runTool(
       });
 
     // 该地区的店，按离当地锚点距离附加距离，评分排序取前 10
-    let list = await listRestaurants({ regionId });
+    let list = await listRestaurants({ regionId, withPersonal: false });
     if (centerLat != null && centerLng != null)
       list = withDistanceFrom(list, { lat: centerLat, lng: centerLng });
     list.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
@@ -389,7 +396,10 @@ async function runTool(
 
   if (name === "propose_action") {
     const id = Number(input.restaurantId);
-    const r = all.find((x) => x.id === id);
+    // 提议的店可能在任意地区（本地或旅行），按 id 查一次（不带个人层）。写操作很少见。
+    const r = (await listRestaurants({ withPersonal: false })).find(
+      (x) => x.id === id,
+    );
     if (!r)
       return JSON.stringify({ error: "找不到这家店，请先用 search_restaurants 确认 id" });
     const nm = r.name;
@@ -559,7 +569,8 @@ export async function* streamChatAgent(
 
   // 推荐 id → 完整餐厅对象（带距离），按推荐顺序
   if (ctx.recommendedIds.size > 0) {
-    const all = withDistanceFromHome(await listRestaurants({}));
+    // 推荐卡不需要个人层（清单/标签），跳过省两次全表查询。
+    const all = withDistanceFromHome(await listRestaurants({ withPersonal: false }));
     const homeId = await getHomeRegionId();
     const byId = new Map(all.map((r) => [r.id, r]));
     const items = [...ctx.recommendedIds]

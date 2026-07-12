@@ -1,7 +1,7 @@
 /** 服务端：餐厅查询（并入访问信息）+ 小红书解析入库。 */
 
 import "server-only";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, isNull, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
   restaurants,
@@ -37,9 +37,15 @@ export interface ListFilters {
   regionId?: number; // 只看某地区
   includeNullRegion?: boolean; // 该地区查询是否也纳入 region_id 为空的旧数据（home 用）
   onlyHidden?: boolean; // 「黑名单」视图：只看被手动拉黑的
+  /** 是否附加个人层（清单 id + 标签）。页面要；Agent 工具不需要，传 false 省两次全表查询。 */
+  withPersonal?: boolean;
 }
 
-/** 列出餐厅，并聚合每家「是否去过」「我的最高评分」。 */
+/**
+ * 列出餐厅，并聚合每家「是否去过」「我的最高评分」。
+ * 过滤尽量下推 SQL：region/source/hidden/wantToEat 走 WHERE（用 region_id 索引），
+ * 「去过与否」依赖聚合走 HAVING——不再全表拉回内存再 filter。
+ */
 export async function listRestaurants(
   filters: ListFilters = {},
 ): Promise<RestaurantView[]> {
@@ -47,6 +53,34 @@ export async function listRestaurants(
   const visitedExpr = sql<number>`COUNT(${visits.id})`;
   const hasXhsExpr = sql<number>`MAX(CASE WHEN ${restaurantXhs.id} IS NOT NULL THEN 1 ELSE 0 END)`;
   const hasPhotoExpr = sql<number>`MAX(CASE WHEN ${restaurantPhotos.id} IS NOT NULL AND ${restaurantPhotos.contentType} != 'none' THEN 1 ELSE 0 END)`;
+
+  // WHERE：只依赖 restaurants 自身列的过滤，聚合前就砍掉。
+  const whereConds = [
+    // 黑名单：默认只看未拉黑；「黑名单」视图只看已拉黑。
+    eq(restaurants.hidden, filters.onlyHidden ? true : false),
+  ];
+  if (filters.regionId != null) {
+    whereConds.push(
+      filters.includeNullRegion
+        ? or(
+            eq(restaurants.regionId, filters.regionId),
+            isNull(restaurants.regionId),
+          )!
+        : eq(restaurants.regionId, filters.regionId),
+    );
+  }
+  if (filters.source) whereConds.push(eq(restaurants.source, filters.source));
+  // 「想去吃」= wantToEat 列为真 + 没去过（去过由 HAVING 判）。
+  if (filters.visit === "want")
+    whereConds.push(eq(restaurants.wantToEat, true));
+
+  // HAVING：依赖聚合（去过 = COUNT(visits) > 0）。
+  const havingCond =
+    filters.visit === "visited"
+      ? sql`${visitedExpr} > 0`
+      : filters.visit === "want"
+        ? sql`${visitedExpr} = 0`
+        : undefined;
 
   const rows = await db
     .select({
@@ -77,10 +111,12 @@ export async function listRestaurants(
       restaurantPhotos,
       eq(restaurantPhotos.restaurantId, restaurants.id),
     )
+    .where(and(...whereConds))
     .groupBy(restaurants.id)
+    .having(havingCond)
     .all();
 
-  let views: RestaurantView[] = rows.map((r) => ({
+  const views: RestaurantView[] = rows.map((r) => ({
     id: r.id,
     placeId: r.placeId,
     name: r.name,
@@ -102,27 +138,17 @@ export async function listRestaurants(
     hidden: r.hidden,
   }));
 
-  if (filters.regionId != null) {
-    views = views.filter(
-      (v) =>
-        v.regionId === filters.regionId ||
-        (filters.includeNullRegion && v.regionId == null),
-    );
-  }
-  if (filters.source) views = views.filter((v) => v.source === filters.source);
-  if (filters.visit === "want") views = views.filter((v) => v.wantToEat && !v.visited);
-  if (filters.visit === "visited") views = views.filter((v) => v.visited);
-  // 黑名单：默认排除被拉黑的；「黑名单」视图则只看被拉黑的。
-  views = views.filter((v) => (filters.onlyHidden ? v.hidden : !v.hidden));
-
-  // 个人层：附加每店所属清单 id + 标签（客户端按清单/标签筛选、卡片展示用）。
-  const [listMap, tagsMap] = await Promise.all([
-    getListMembershipMap(),
-    getTagsMap(),
-  ]);
-  for (const v of views) {
-    v.listIds = listMap.get(v.id);
-    v.tags = tagsMap.get(v.id);
+  // 个人层：附加每店所属清单 id + 标签（页面按清单/标签筛选、卡片展示用）。
+  // Agent 工具不需要，传 withPersonal:false 跳过，省两次全表查询。
+  if (filters.withPersonal !== false) {
+    const [listMap, tagsMap] = await Promise.all([
+      getListMembershipMap(),
+      getTagsMap(),
+    ]);
+    for (const v of views) {
+      v.listIds = listMap.get(v.id);
+      v.tags = tagsMap.get(v.id);
+    }
   }
 
   return views;
