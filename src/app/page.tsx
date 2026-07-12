@@ -750,7 +750,7 @@ export default function Home() {
           )}
 
           <section className="space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
               <h2 className="flex items-center gap-2 text-sm font-semibold">
                 餐厅{loading ? "…" : `（${visible.length}）`}
                 {filtersActive && (
@@ -762,7 +762,7 @@ export default function Home() {
                   </button>
                 )}
               </h2>
-              <div className="flex gap-1.5">
+              <div className="flex flex-wrap gap-1.5">
                 <Button size="sm" onClick={() => setWizardOpen(true)}>
                   <UtensilsCrossed className="h-4 w-4" />
                   今晚吃什么
