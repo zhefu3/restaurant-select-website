@@ -49,6 +49,9 @@ export function ShareCardModal({
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="生成美食卡"
         className="w-[min(94vw,380px)] overflow-hidden rounded-2xl border bg-background shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >

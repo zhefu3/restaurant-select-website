@@ -60,6 +60,9 @@ export function NearbyModal({
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="附近还有啥"
         className="flex max-h-[82vh] w-[min(94vw,460px)] flex-col overflow-hidden rounded-2xl border bg-background shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >

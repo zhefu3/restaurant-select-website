@@ -35,6 +35,9 @@ export function LeaderboardModal({
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="我的美食榜"
         className="flex max-h-[80vh] w-[min(92vw,480px)] flex-col overflow-hidden rounded-2xl border bg-background shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >

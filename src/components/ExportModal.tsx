@@ -88,6 +88,9 @@ export function ExportModal({
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="导出清单"
         className="flex max-h-[82vh] w-[min(94vw,480px)] flex-col overflow-hidden rounded-2xl border bg-background shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >

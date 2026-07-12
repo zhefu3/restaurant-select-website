@@ -140,6 +140,9 @@ export function ProfileModal({
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="我的美食档案"
         className="flex max-h-[85vh] w-[min(94vw,560px)] flex-col overflow-hidden rounded-2xl border bg-background shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >

@@ -102,6 +102,9 @@ export function CompareModal({
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="对比餐厅"
         className="flex max-h-[84vh] w-[min(94vw,620px)] flex-col overflow-hidden rounded-2xl border bg-background shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
