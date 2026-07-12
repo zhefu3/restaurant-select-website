@@ -84,7 +84,14 @@ export function LeaderboardModal({
                 <div className="min-w-0 flex-1">
                   <div className="truncate font-medium">{r.name}</div>
                   <div className="truncate text-xs text-muted-foreground">
-                    {r.rating != null && <>⭐ {r.rating} · </>}
+                    {r.rating != null && (
+                      <>
+                        <span className="text-amber-600 dark:text-amber-500">
+                          ★ {r.rating}
+                        </span>{" "}
+                        ·{" "}
+                      </>
+                    )}
                     {cuisineLabel(r.cuisine)}
                   </div>
                 </div>

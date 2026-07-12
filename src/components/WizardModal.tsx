@@ -191,7 +191,11 @@ export function WizardModal({
                     </button>
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {r.rating != null && <>⭐ {r.rating} </>}
+                    {r.rating != null && (
+                      <span className="text-amber-600 dark:text-amber-500">
+                        ★ {r.rating}{" "}
+                      </span>
+                    )}
                     {r.cuisine && <>· {cuisineLabel(r.cuisine)} </>}
                     {r.distanceKm != null && (
                       <>· 🏠 {r.distanceKm.toFixed(1)}km</>

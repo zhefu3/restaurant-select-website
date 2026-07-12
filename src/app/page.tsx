@@ -858,7 +858,11 @@ export default function Home() {
                     {pick.name} ↗
                   </a>
                   <div className="text-xs text-muted-foreground">
-                    {pick.rating != null && <>⭐ {pick.rating} </>}
+                    {pick.rating != null && (
+                      <span className="text-amber-600 dark:text-amber-500">
+                        ★ {pick.rating}{" "}
+                      </span>
+                    )}
                     {pick.cuisine && <>· {cuisineLabel(pick.cuisine)} </>}
                     {pick.distanceKm != null && (
                       <>· 📍 {formatDistance(pick.distanceKm)}</>
