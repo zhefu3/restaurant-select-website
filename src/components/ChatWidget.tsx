@@ -65,7 +65,7 @@ export function ChatWidget({
   onLocate,
   onDataChanged,
 }: {
-  onLocate: (id: number) => void;
+  onLocate: (r: RestaurantView) => void;
   onDataChanged?: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -358,7 +358,7 @@ export function ChatWidget({
                           </a>
                           <button
                             onClick={() => {
-                              onLocate(r.id);
+                              onLocate(r);
                               setOpen(false);
                             }}
                             className="shrink-0 text-xs text-blue-600 hover:underline"

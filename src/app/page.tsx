@@ -385,6 +385,26 @@ export default function Home() {
     }
   }, [pendingFocus, restaurants]);
 
+  // 聊天推荐「地图定位」：推荐的店可能在别的地区（如西雅图），当前地图没加载它的 marker。
+  // 同地区→直接聚焦；跨地区→先切到那个地区，等新地区数据加载后由上面的 effect 聚焦。
+  const handleChatLocate = useCallback(
+    (r: RestaurantView) => {
+      const homeId = regions.find((x) => x.kind === "home")?.id ?? null;
+      const targetRegion = r.regionId ?? homeId; // region 为空的旧数据视为 home
+      if (
+        targetRegion == null ||
+        targetRegion === activeRegionId ||
+        restaurants.some((x) => x.id === r.id)
+      ) {
+        setFocusId(r.id); // 已在当前地区（或已加载）
+        return;
+      }
+      setActiveRegionId(targetRegion);
+      setPendingFocus(r.id);
+    },
+    [regions, activeRegionId, restaurants],
+  );
+
   // 视图状态同步进 URL（刷新不丢 + 可分享）。用 replaceState 不污染历史。
   // 等 restored 之后再写，否则挂载首帧会用默认值把 URL 参数冲掉。
   useEffect(() => {
@@ -1015,7 +1035,9 @@ export default function Home() {
         restaurants={withMy}
         regionName={activeIsHome ? "我的湾区" : (activeRegion?.name ?? "")}
       />
-      {!PUBLIC_DEMO && <ChatWidget onLocate={setFocusId} onDataChanged={load} />}
+      {!PUBLIC_DEMO && (
+        <ChatWidget onLocate={handleChatLocate} onDataChanged={load} />
+      )}
       <CommandPalette
         restaurants={withMy}
         regions={regions}
