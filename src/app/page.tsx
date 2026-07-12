@@ -62,6 +62,7 @@ import { fireConfetti } from "@/lib/confetti";
 import { ListSkeleton } from "@/components/ListSkeleton";
 import { RegionInsights } from "@/components/RegionInsights";
 import { ForYouRail } from "@/components/ForYouRail";
+import { countChains } from "@/lib/chains";
 
 type UrlInit = {
   regionId: number | null;
@@ -162,6 +163,22 @@ export default function Home() {
   const [pendingNearMe, setPendingNearMe] = useState(false);
   // 「黑名单」视图：只看被手动拉黑的店。
   const [showBlacklist, setShowBlacklist] = useState(false);
+  // 「合并连锁」：把同名分店折叠成一个可展开的组。
+  const [groupChains, setGroupChains] = useState(false);
+  // 展开连锁时把所有分店在地图上框出来（地图把 fitBounds 函数交上来）。
+  const fitBranchesRef = useRef<(coords: [number, number][]) => void>(() => {});
+  const handleFitBoundsReady = useCallback(
+    (fn: (coords: [number, number][]) => void) => {
+      fitBranchesRef.current = fn;
+    },
+    [],
+  );
+  const handleShowBranches = useCallback((branches: RestaurantView[]) => {
+    const coords = branches
+      .filter((b) => b.lat != null && b.lng != null)
+      .map((b) => [b.lat as number, b.lng as number] as [number, number]);
+    fitBranchesRef.current(coords);
+  }, []);
   // 按时段的问候语（放 effect 里算，避免 SSR/CSR 时间不一致的水合告警）。
   const [greeting, setGreeting] = useState<string | null>(null);
   useEffect(() => {
@@ -421,6 +438,9 @@ export default function Home() {
     const filtered = applyClientFilters(withMy, clientFilters, chains);
     return sortRestaurants(filtered, sort);
   }, [withMy, clientFilters, chains, sort]);
+
+  // 当前列表里有几个同名连锁（≥2 家）——有才显示「合并连锁」开关。
+  const chainCount = useMemo(() => countChains(visible), [visible]);
 
   // 顶部速览统计（当前地区）。
   const stats = useMemo(() => {
@@ -691,6 +711,7 @@ export default function Home() {
             onUserLocate={setMyLoc}
             onHighlightReady={handleHighlightReady}
             onLocateReady={handleLocateReady}
+            onFitBoundsReady={handleFitBoundsReady}
             onPolygonSearch={PUBLIC_DEMO ? undefined : handlePolygonSearch}
           />
         </div>
@@ -864,6 +885,23 @@ export default function Home() {
                 </button>
               </div>
             )}
+            {/* 「合并连锁」开关：把同名分店（如多家 In-N-Out）折叠成一组，点开看各分店 + 地图框出。 */}
+            {chainCount > 0 && (
+              <div className="flex items-center justify-end">
+                <button
+                  onClick={() => setGroupChains((v) => !v)}
+                  aria-pressed={groupChains}
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-colors ${
+                    groupChains
+                      ? "border-foreground/30 bg-accent text-foreground"
+                      : "border-input text-muted-foreground hover:bg-accent hover:text-foreground"
+                  }`}
+                  title="把同名连锁的多家分店折叠成一组"
+                >
+                  🔗 合并连锁{groupChains ? `（${chainCount}）` : ""}
+                </button>
+              </div>
+            )}
             {loading && visible.length === 0 ? (
               <ListSkeleton />
             ) : (
@@ -872,6 +910,8 @@ export default function Home() {
                 focusId={focusId}
                 onFocus={setFocusId}
                 onHover={handleHover}
+                groupChains={groupChains}
+                onShowBranches={handleShowBranches}
               />
             )}
           </section>

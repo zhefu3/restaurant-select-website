@@ -215,8 +215,31 @@ export interface RestaurantMapProps {
   onHighlightReady?: (fn: (id: number | null) => void) => void;
   /** 把「定位并飞过去」函数交给父组件，供「附近」一键调用。 */
   onLocateReady?: (fn: () => void) => void;
+  /** 把「缩放到给定一组坐标」函数交给父组件，供展开连锁时框出所有分店。 */
+  onFitBoundsReady?: (fn: (coords: [number, number][]) => void) => void;
   /** 圈选搜索（②B）：画完多边形后交给父组件调 Google 搜索。不传则不显示圈选按钮。 */
   onPolygonSearch?: (points: [number, number][], done: () => void) => void;
+}
+
+/** 把「缩放到一组坐标」函数交给父组件——展开连锁时把所有分店框进视野（瞬移 fitBounds，安全）。 */
+function FitBoundsControl({
+  onReady,
+}: {
+  onReady: (fn: (coords: [number, number][]) => void) => void;
+}) {
+  const map = useMap();
+  useEffect(() => {
+    onReady((coords) => {
+      if (coords.length === 0) return;
+      if (coords.length === 1) {
+        map.setView(coords[0], Math.max(map.getZoom(), 14));
+        return;
+      }
+      map.fitBounds(L.latLngBounds(coords), { padding: [60, 60], maxZoom: 15 });
+    });
+    return () => onReady(() => {});
+  }, [map, onReady]);
+  return null;
 }
 
 /** 地区切换时飞到该地区中心（路线地区则缩放到全程）；并把地图中心回报给父组件。 */
@@ -485,6 +508,7 @@ export default function RestaurantMap({
   onUserLocate,
   onHighlightReady,
   onLocateReady,
+  onFitBoundsReady,
   onPolygonSearch,
 }: RestaurantMapProps) {
   const home = getHomeAnchor();
@@ -588,6 +612,7 @@ export default function RestaurantMap({
 
       <LocateControl setUserLoc={setUserLoc} onLocateReady={onLocateReady} />
       <FitAllControl restaurants={visible} />
+      {onFitBoundsReady && <FitBoundsControl onReady={onFitBoundsReady} />}
       {onPolygonSearch && <DrawControl onSearch={onPolygonSearch} />}
       {onHighlightReady && (
         <HighlightController
