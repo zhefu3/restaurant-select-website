@@ -61,6 +61,7 @@ import { LeaderboardModal } from "@/components/LeaderboardModal";
 import { ProfileModal } from "@/components/ProfileModal";
 import { CompareModal } from "@/components/CompareModal";
 import { ShareCardModal } from "@/components/ShareCardModal";
+import { NearbyModal } from "@/components/NearbyModal";
 import { fireConfetti } from "@/lib/confetti";
 import { ListSkeleton } from "@/components/ListSkeleton";
 import { RegionInsights } from "@/components/RegionInsights";
@@ -143,6 +144,7 @@ export default function Home() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [compareOpen, setCompareOpen] = useState(false);
   const [cardOpen, setCardOpen] = useState(false);
+  const [nearbyOpen, setNearbyOpen] = useState(false);
   const [duelOpen, setDuelOpen] = useState(false);
   // PWA 快捷方式：?action=wizard / ?action=pick（pick 要等数据加载完再执行）。
   const [pendingAction, setPendingAction] = useState<string | null>(null);
@@ -978,6 +980,12 @@ export default function Home() {
         onClose={() => setCardOpen(false)}
         restaurants={withMy}
       />
+      <NearbyModal
+        open={nearbyOpen}
+        onClose={() => setNearbyOpen(false)}
+        restaurants={withMy}
+        onLocate={setFocusId}
+      />
       {!PUBLIC_DEMO && <ChatWidget onLocate={setFocusId} onDataChanged={load} />}
       <CommandPalette
         restaurants={withMy}
@@ -992,6 +1000,7 @@ export default function Home() {
           else if (a === "leaderboard") setLeaderboardOpen(true);
           else if (a === "compare") setCompareOpen(true);
           else if (a === "card") setCardOpen(true);
+          else if (a === "nearby-alt") setNearbyOpen(true);
           else if (a === "chains") setGroupChains((v) => !v);
           else if (a === "blacklist") setShowBlacklist((v) => !v);
           else if (a === "theme") {
