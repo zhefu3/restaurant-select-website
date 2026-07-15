@@ -20,7 +20,12 @@
 
 > 线上站点跑在**只读演示模式**：地图、列表、筛选、菜单、点评都能自由浏览，任何会花钱或改数据的操作都在服务端被拦截，可以放心点。界面为中文（本应用为一位母语中文的用户打造）。
 
-![首页 —— 「为你推荐」精选栏、实时筛选与餐厅库](docs/screenshots/home.png)
+![星空夜间模式首页 —— 「为你推荐」精选栏、实时筛选与餐厅库](docs/screenshots/home-dark.png)
+
+<p align="center">
+  <img src="docs/screenshots/home.png" width="640" alt="同一页面的冷灰浅色模式"><br>
+  <sub><em>明暗双主题 —— 星空夜间模式 + 冷灰 SaaS 浅色模式，连地图瓦片都跟着切换。</em></sub>
+</p>
 
 ---
 

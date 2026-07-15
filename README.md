@@ -20,7 +20,12 @@ Built solo as a full-stack product: real external-API integrations (Google Place
 
 > The live site runs in **read-only demo mode** — browse the map, list, filters, menus, and reviews freely. Anything that would spend an API dollar or mutate data is blocked server-side, so it's safe to poke around. The UI is in Chinese (the app was built for a native-Chinese-speaking user); this README is in English.
 
-![Home view — curated *For You* rail, live filters, and the restaurant library](docs/screenshots/home.png)
+![Home view in the starfield night mode — curated *For You* rail, live filters, and the restaurant library](docs/screenshots/home-dark.png)
+
+<p align="center">
+  <img src="docs/screenshots/home.png" width="640" alt="The same view in the cool-grey light mode"><br>
+  <sub><em>Fully themed light &amp; dark — a starfield night mode and a cool-grey SaaS light mode, right down to the map tiles.</em></sub>
+</p>
 
 ---
 
