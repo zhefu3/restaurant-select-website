@@ -1,116 +1,170 @@
-# Athroics · 餐厅模块
+# 🍜 Athroics · Restaurant Picker
 
-个人助理 Athroics 的第一个模块。本轮**只做餐厅**，但骨架已按能容纳后续 5 个模块
-（CS2 电竞 / 电影 / 音乐剧 / 提醒 / 每日简报）搭好：`src/collectors/` 目录、`config.ts`
-里的 `futureModules` 占位、env 里的注释占位。
+**An AI-native restaurant companion for a Bay Area food lover** — discovers, ranks, and remembers ~1,000 curated restaurants across home turf and travel destinations, with a streaming conversational agent that recommends where to eat and can act on your behalf.
 
-## 功能
+Built solo as a full-stack product: real external-API integrations (Google Places / Routes / Anthropic), an aggressive cache-everything data layer, hard cost circuit-breakers, and a tool-calling LLM agent — all shipped to production.
 
-1. **区域发现** — 手动脚本 `npm run discover`。区域 = △(斯坦福 / SJC / 家) ∪ 三个 10km 圆，网格采样 → Google Places → 过滤 `rating≥4.0 且 reviews≥100` → 去重入库（南湾主库 965 家）。
-2. **小红书增量** — 粘贴框贴**链接 / 文字 / 截图**：链接 best-effort 抓公开摘要（反爬抓不到提示改贴文字/截图），Claude 提取店名 + **评价摘要 + 推荐菜** → Places 反查 → 确认加入「想去吃」，卡片 📕 标记、弹窗「小红书怎么说」展示。一次 >10 家的合集自动批量入库。
-3. **去过 + 评分** — 弹窗内 **0–100 分制**打分（快捷键 95/85/75/60/40 或手输）；≥80 金色推荐，≤40 地图隐藏。⭐想去吃 / ✓去过。
-4. **地图 + 列表** — Leaflet + OSM，菜系 emoji 图标 + 聚合；列表↔地图联动；搜索 / 菜系大类 / 城市 / 价格 / 距离 / 隐藏连锁筛选，多种排序。
-5. **智能选餐** — 今晚吃什么向导、帮我选、排位赛(Elo)、口味画像、推荐点菜(评论挖招牌菜)、AI 菜单翻译、我的点评。
-6. **旅行地区** — 按城市 / 定点 / 真实驾车路线搜索沿途餐厅，地区互不污染、全部缓存。
-7. **对话 Agent** — 右下气泡，工具调用型只读推荐（Sonnet 5）。
-8. **PWA + 只读演示** — 可装手机、离线壳；`DEMO_MODE` 一键变只读演示。
+<p>
+  <img alt="Next.js" src="https://img.shields.io/badge/Next.js_15-000?logo=next.js&logoColor=white">
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white">
+  <img alt="Drizzle" src="https://img.shields.io/badge/Drizzle_ORM-C5F74F?logo=drizzle&logoColor=black">
+  <img alt="Turso" src="https://img.shields.io/badge/Turso_/_libSQL-4FF8D2?logo=sqlite&logoColor=black">
+  <img alt="Anthropic" src="https://img.shields.io/badge/Claude_Agent-D97757?logo=anthropic&logoColor=white">
+  <img alt="Leaflet" src="https://img.shields.io/badge/Leaflet-199900?logo=leaflet&logoColor=white">
+  <img alt="Vercel" src="https://img.shields.io/badge/Deployed_on_Vercel-000?logo=vercel&logoColor=white">
+</p>
 
-## 技术栈
+### 🔗 [**Live Demo →** restaurant-select-website.vercel.app](https://restaurant-select-website.vercel.app)
 
-Next.js 15 (App Router, TS) · Tailwind + shadcn 风格组件 · react-leaflet v5 + OSM ·
-Turso/libSQL + Drizzle · Google Places (New) + Routes + Geocoding · Anthropic API
-(Sonnet 5 对话 / Haiku 提取·vision) · PWA(manifest + service worker)。
+> The live site runs in **read-only demo mode** — browse the map, list, filters, menus, and reviews freely. Anything that would spend an API dollar or mutate data is blocked server-side, so it's safe to poke around. The UI is in Chinese (the app was built for a native-Chinese-speaking user); this README is in English.
 
-## 快速开始
+---
+
+## Why this project is interesting
+
+This isn't a CRUD tutorial app. Every feature had to survive two hard constraints that shaped the whole architecture:
+
+1. **Real money on every external call.** Google Places and Anthropic bill per request. The app treats API spend as a first-class resource — pre-flight budget checks, monthly hard caps, and a *cache-everything* rule so the same lookup is never paid for twice.
+2. **A single real user with real taste.** No fake data, no lorem. Features are judged by whether they actually help someone decide where to eat tonight — which pushed the product toward an **AI agent**, a **taste model**, and **decision tools** rather than yet another list view.
+
+The result is ~13,700 lines of TypeScript across a clean layered architecture: 24 API routes, 35 server-side domain modules, 26 React components, and an 18-table relational schema.
+
+---
+
+## Feature highlights
+
+| Area | What it does |
+|---|---|
+| 🗺️ **Map + list** | Leaflet + OpenStreetMap with cuisine-emoji markers, clustering, and bi-directional list↔map linking (hover a card → highlight its marker; click → fly + open popup). |
+| 🔍 **Discovery** | Grid-sampled Google Places sweep of the home region (rating/review thresholds), plus **travel discovery** by city, radius, real driving route (Routes API polyline), or hand-drawn map polygon. |
+| 🤖 **Conversational agent** | A streaming, tool-calling Claude agent ("what should I eat near Stanford?", "find spots on the drive to Napa") that searches the user's own library, recommends clickable cards, and proposes write-actions behind a confirmation step. |
+| ⭐ **Rate & remember** | 0–100 scoring, want-to-eat / visited tracking, a **taste profile** built from ratings, Elo-style **head-to-head ranking**, and AI-mined signature dishes from Google reviews. |
+| 📕 **Xiaohongshu ingest** | Paste a link, text, or screenshot → Claude extracts restaurant names + review summaries + recommended dishes (vision for screenshots) → reverse-matched against Google Places → confirmed into the library. |
+| 🎯 **Decision tools** | "Pick for me" (weighted random), compare 2–3 side-by-side, curated *For You* rail, nearby finder, shareable food cards, export lists — all **zero-API-cost, client-side**. |
+| 📱 **Production polish** | Installable PWA with offline shell, light/dark theming (a cool-grey SaaS light mode + a starfield dark mode), URL-persisted view state, command palette (⌘K), full keyboard a11y, and a Telegram bot sharing the same agent brain. |
+
+---
+
+## Architecture
+
+```mermaid
+flowchart TD
+    subgraph client ["1 - Client (Next.js App Router)"]
+        UI["Map, List, RegionBar, ChatWidget<br/>CommandPalette, modal tools"]
+    end
+    subgraph gate ["2 - Middleware"]
+        MW["demoBlocks() read-only demo gate<br/>blocks writes + paid reads to 403"]
+    end
+    subgraph api ["3 - API Routes (24)"]
+        R["/restaurants, /regions/*, /chat (NDJSON stream)<br/>/agent/act, /xhs, /visits, /lists, /telegram"]
+    end
+    subgraph lib ["4 - Domain lib (server-only, 35 modules)"]
+        L["restaurants, travel, chat-agent, dish-recs<br/>api-usage (metering + circuit breaker), config"]
+        C["recommend, picks, chains, score, taste<br/>(zero-cost, pure client-side compute)"]
+    end
+    subgraph store ["5 - Storage and External"]
+        DB[("Drizzle to libSQL / Turso<br/>18 tables")]
+        EXT["Google Places / Routes / Geocoding<br/>Anthropic Claude Sonnet + Haiku, OSM tiles"]
+    end
+
+    client --> gate --> api --> lib
+    lib --> DB
+    lib -. "cache-miss only" .-> EXT
+    EXT -. "results cached" .-> DB
+```
+
+**Core principle:** external results are always written back to the DB. Repeat views hit the cache and cost `$0`. Every outbound call is wrapped in `assertUnderCap()` (pre-flight) and `recordUsage()` (post-call), metered in an `api_usage` table that backs a **hard $180/mo Google circuit-breaker** and a soft Anthropic cap.
+
+---
+
+## The AI agent, in depth
+
+The conversational agent is the centerpiece. It's a **streaming tool-use loop** over Claude Sonnet, exposed to the browser as newline-delimited JSON so replies render token-by-token.
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant API as /api/chat
+    participant A as Agent loop (Sonnet)
+    participant T as Tools
+    U->>API: message
+    API->>API: assertChatBudget() 429s before opening the stream if over cap
+    loop up to 6 turns
+        A->>T: search_restaurants (home), search_area / along_route (travel)
+        T-->>A: JSON results (cache-first)
+        A-->>U: stream deltas, status, recommendations, regions_changed
+    end
+    A-->>U: propose_action, then confirmation card, then POST /api/agent/act
+```
+
+Things I'm proud of here:
+
+- **Budget-safe streaming.** Once a stream opens you can only send `200`, so the budget check runs *before* the stream and returns a clean `429` when over cap.
+- **Cache-first travel tools.** "What should I eat in Seattle?" reuses a cached region if it was searched in the last 30 days (zero spend); only a genuine cache-miss calls Google, capped at 2 paid searches per turn.
+- **Write actions with a human in the loop.** The agent never mutates data directly — it emits a `propose_action` card; the user confirms, then a separate endpoint applies it.
+- **One brain, two surfaces.** The same agent powers both the web widget (streaming) and a Telegram bot (a non-streaming wrapper).
+
+---
+
+## Engineering decisions worth calling out
+
+- **Cost as an architectural constraint** — per-call metering, monthly hard caps, and a strict "cache every external result" rule. A one-time backfill of real photos for the entire library was a deliberate, budgeted spend; everything after is free to re-view.
+- **Filter push-down** — restaurant queries push `region / visit / hidden / source` predicates into SQL `WHERE`/`HAVING` (backed by a `region_id` index) instead of scanning the full table into memory; the agent's tools request only the rows they need.
+- **Race-condition guard** — rapid region/filter switching fires concurrent loads; a sequence-number ref ensures only the latest response is applied, so a slow stale request can't clobber fresh results.
+- **Render-cost discipline** — map center lives in a `ref`, not state, so dragging the map doesn't re-render ~500 markers; cluster/`flyTo` interaction pitfalls are documented and worked around with `setView`.
+- **Read-only demo mode** — a two-layer gate (server middleware + hidden client entry points) lets the project live publicly on the internet without anyone burning the owner's API budget.
+
+---
+
+## Tech stack
+
+| Layer | Choice |
+|---|---|
+| Framework | Next.js 15 (App Router, RSC, TypeScript) |
+| UI | Tailwind CSS + shadcn-style components, react-leaflet v5 + marker clustering |
+| Data | Drizzle ORM over libSQL / **Turso** (local `file:` in dev, edge SQLite in prod) |
+| External APIs | Google Places (New) · Routes · Geocoding; Anthropic Claude **Sonnet** (chat) + **Haiku** (extraction / vision) |
+| Platform | Vercel (`standalone` output), PWA (manifest + service worker) |
+
+---
+
+## Data model
+
+18 tables across six domains:
+
+- **Core geo** — `regions`, `restaurants`, `visits`
+- **Content** — `restaurant_menus`, `restaurant_reviews`, `dish_recs`, `restaurant_xhs`, `restaurant_photos`
+- **Personal layer** — `lists`, `list_items`, `restaurant_tags`
+- **AI chat** — `conversations`, `chat_messages` (recommendation cards persisted as JSON, restored on reopen)
+- **Discovery / gamification** — `xhs_captures`, `dishes`, `duels`
+- **Ops** — `api_usage` (cost ledger), `config`
+
+Travel upserts deliberately **never reassign an existing restaurant's `region_id`**, so a new area search can't "steal" restaurants that already belong to home or another region.
+
+---
+
+## Getting started
 
 ```bash
-# 1. 装依赖
 npm install
 
-# 2. 配环境变量
 cp .env.example .env
-#   填入 GOOGLE_PLACES_API_KEY 和 ANTHROPIC_API_KEY
-#   TURSO_* 可留空 → 本地自动用 file:./local.db
+#  GOOGLE_PLACES_API_KEY and ANTHROPIC_API_KEY required
+#  TURSO_* optional — leave blank to use a local file:./local.db
 
-# 3. 建表 + 初始化 config
-npm run db:push
-npm run db:seed
+npm run db:push      # create tables
+npm run db:seed      # seed config
+npm run dev          # http://localhost:3000
 
-# 4. 起开发服务器
-npm run dev        # http://localhost:3000
-
-# 5.（配好 Google key 后）跑一次区域发现
-npm run discover              # 全量
-npm run discover -- --limit 5 # 只跑前 5 个网格点（省钱调试）
+npm run discover     # (optional) one-off Google Places sweep of the home region
 ```
 
-## 成本控制
+Cost controls are on by default: `assertUnderCap()` guards every paid call, and a `DEMO_MODE=1` env flag flips the whole app read-only.
 
-Google Places 花费记在 `api_usage` 表，按月累计；`GOOGLE_PLACES_MONTHLY_CAP_USD`
-（默认 $180）**硬熔断**——每次付费调用前检查，超上限即停。结果按 `place_id` 缓存入库，
-重复的只刷新评分不重复计费。
+---
 
-## 部署到云端（任何设备 / 手机访问）
+## Notes
 
-本地 `file:./local.db` 只在自己电脑上能用。要在别的电脑、手机上访问，需要：
-**① 云数据库（Turso）+ ② 托管（Vercel 最省事）**。
+Solo-built personal project — designed, architected, and shipped end to end: data modeling, external-API integration, the LLM agent, the front-end, deployment, and the cost/observability plumbing. It's module one of a larger personal-assistant system ("Athroics"); the schema and collector structure are laid out to grow.
 
-```bash
-# ① Turso：建云库，把本地数据搬上去
-turso db create athroics
-turso db show athroics --url          # → TURSO_DATABASE_URL
-turso db tokens create athroics       # → TURSO_AUTH_TOKEN
-sqlite3 local.db .dump | turso db shell athroics   # 本地 965+ 家一次性导入
-
-# ② Vercel：连接 GitHub 仓库，在 Project → Settings → Environment Variables 填：
-#   TURSO_DATABASE_URL / TURSO_AUTH_TOKEN / GOOGLE_PLACES_API_KEY / ANTHROPIC_API_KEY
-#   （自用实例不要设 DEMO_MODE）
-# 然后 Deploy。Next.js 15 App Router 在 Vercel 上零配置可跑。
-```
-
-装到手机：用手机浏览器打开部署后的网址 → 「添加到主屏幕」，即得一个全屏 PWA（已带 manifest + 图标 + 离线壳）。
-
-## 只读演示（放个人网站，别人能看不能花你的钱）
-
-再部署**第二个**实例（或同一部署设不同环境变量），设置：
-
-```
-DEMO_MODE=1
-NEXT_PUBLIC_DEMO_MODE=1
-```
-
-- 服务端 `middleware.ts` 硬拦截：所有写请求 + 会花钱的读请求（小红书提取、AI 菜单、推荐点菜、地区搜索、对话 Agent）一律 403。**访客点什么都烧不到你的 Google/Anthropic 额度，也改不了你的数据。**
-- 前端隐藏这些入口并显示「🔒 只读演示」横幅；地图 / 列表 / 筛选 / 排序 / 看菜单点评 / 小红书笔记等**已缓存**内容照常浏览。
-- 演示库建议用一份快照，并去掉私人自由文本（保留评分/推荐/小红书摘要，去掉点评正文和到访备注）：
-
-```bash
-cp local.db demo.db
-sqlite3 demo.db "UPDATE restaurant_reviews SET body=''; UPDATE visits SET notes=NULL;"
-sqlite3 demo.db .dump | turso db shell athroics-demo   # 导入演示专用云库
-```
-
-## 目录
-
-```
-src/
-  middleware.ts   只读演示硬闸（DEMO_MODE 时拦写请求 + 花钱的读请求）
-  app/            页面 + API 路由（restaurants/xhs/visits/wishlist/review/
-                  dishes/menu/chat/regions/duel/restaurant-extra …）+ error/layout
-  components/     地图(MapView→RestaurantMap, ssr:false)、列表、粘贴框、筛选、
-                  弹窗、对话气泡、向导/排位、ServiceWorkerRegister
-  db/             Drizzle schema(10 表) + 客户端
-  lib/            config · geo · google-places · anthropic · api-usage(熔断) ·
-                  restaurants · menu-review · xhs-fetch · demo · taste · recommend · types
-  collectors/     发现逻辑（为后续模块预留同构目录）
-scripts/          discover.ts · seed-config.ts
-public/           manifest.json · sw.js · 图标
-```
-
-## 调锚点 / 阈值
-
-改 `src/lib/config.ts` 里的 `ANCHORS`（含家的坐标）和 `restaurantConfig`，
-然后重跑 `npm run db:seed`。
-
-## 后续模块（本轮未做）
-
-CS2 / 电影 / 音乐剧 / 提醒 / 每日简报、Telegram bot。schema、目录、config 已预留位置。
+<sub>Licensed under the terms in <a href="LICENSE">LICENSE</a>.</sub>
