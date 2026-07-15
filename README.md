@@ -1,5 +1,7 @@
 # 🍜 Athroics · Restaurant Picker
 
+<samp><strong>English</strong> · <a href="README.zh.md">中文</a></samp>
+
 **An AI-native restaurant companion for a Bay Area food lover** — discovers, ranks, and remembers ~1,000 curated restaurants across home turf and travel destinations, with a streaming conversational agent that recommends where to eat and can act on your behalf.
 
 Built solo as a full-stack product: real external-API integrations (Google Places / Routes / Anthropic), an aggressive cache-everything data layer, hard cost circuit-breakers, and a tool-calling LLM agent — all shipped to production.
@@ -17,6 +19,8 @@ Built solo as a full-stack product: real external-API integrations (Google Place
 ### 🔗 [**Live Demo →** restaurant-select-website.vercel.app](https://restaurant-select-website.vercel.app)
 
 > The live site runs in **read-only demo mode** — browse the map, list, filters, menus, and reviews freely. Anything that would spend an API dollar or mutate data is blocked server-side, so it's safe to poke around. The UI is in Chinese (the app was built for a native-Chinese-speaking user); this README is in English.
+
+![Home view — curated *For You* rail, live filters, and the restaurant library](docs/screenshots/home.png)
 
 ---
 
@@ -42,6 +46,11 @@ The result is ~13,700 lines of TypeScript across a clean layered architecture: 2
 | 📕 **Xiaohongshu ingest** | Paste a link, text, or screenshot → Claude extracts restaurant names + review summaries + recommended dishes (vision for screenshots) → reverse-matched against Google Places → confirmed into the library. |
 | 🎯 **Decision tools** | "Pick for me" (weighted random), compare 2–3 side-by-side, curated *For You* rail, nearby finder, shareable food cards, export lists — all **zero-API-cost, client-side**. |
 | 📱 **Production polish** | Installable PWA with offline shell, light/dark theming (a cool-grey SaaS light mode + a starfield dark mode), URL-persisted view state, command palette (⌘K), full keyboard a11y, and a Telegram bot sharing the same agent brain. |
+
+<p align="center">
+  <img src="docs/screenshots/wizard.png" width="720" alt="'What should I eat tonight?' — a three-question guided pick"><br>
+  <sub><em>The "what should I eat tonight?" guided pick — one of several zero-API-cost decision tools.</em></sub>
+</p>
 
 ---
 
