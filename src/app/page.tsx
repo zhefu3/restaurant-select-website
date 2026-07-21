@@ -14,8 +14,7 @@ import { RestaurantList } from "@/components/RestaurantList";
 import { XhsPasteBox } from "@/components/XhsPasteBox";
 import { Filters, type FilterState } from "@/components/Filters";
 import { FilterBar } from "@/components/FilterBar";
-import { WizardModal } from "@/components/WizardModal";
-import { DuelModal } from "@/components/DuelModal";
+import dynamic from "next/dynamic";
 import { ChatWidget } from "@/components/ChatWidget";
 import { BackToTop } from "@/components/BackToTop";
 import { RegionBar, type RegionSummary } from "@/components/RegionBar";
@@ -57,13 +56,33 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { StarField } from "@/components/StarField";
 import { CommandPalette } from "@/components/CommandPalette";
 import { MoodChips } from "@/components/MoodChips";
-import { LeaderboardModal } from "@/components/LeaderboardModal";
-import { ProfileModal } from "@/components/ProfileModal";
-import { CompareModal } from "@/components/CompareModal";
-import { ShareCardModal } from "@/components/ShareCardModal";
-import { NearbyModal } from "@/components/NearbyModal";
-import { ExportModal } from "@/components/ExportModal";
 import { HeaderTools } from "@/components/HeaderTools";
+
+// 按需弹窗——懒加载，首屏主包不含它们，首次打开时才拉对应 chunk。
+const WizardModal = dynamic(() =>
+  import("@/components/WizardModal").then((m) => m.WizardModal),
+);
+const DuelModal = dynamic(() =>
+  import("@/components/DuelModal").then((m) => m.DuelModal),
+);
+const LeaderboardModal = dynamic(() =>
+  import("@/components/LeaderboardModal").then((m) => m.LeaderboardModal),
+);
+const ProfileModal = dynamic(() =>
+  import("@/components/ProfileModal").then((m) => m.ProfileModal),
+);
+const CompareModal = dynamic(() =>
+  import("@/components/CompareModal").then((m) => m.CompareModal),
+);
+const ShareCardModal = dynamic(() =>
+  import("@/components/ShareCardModal").then((m) => m.ShareCardModal),
+);
+const NearbyModal = dynamic(() =>
+  import("@/components/NearbyModal").then((m) => m.NearbyModal),
+);
+const ExportModal = dynamic(() =>
+  import("@/components/ExportModal").then((m) => m.ExportModal),
+);
 import { fireConfetti } from "@/lib/confetti";
 import { ListSkeleton } from "@/components/ListSkeleton";
 import { RegionInsights } from "@/components/RegionInsights";
@@ -991,50 +1010,66 @@ export default function Home() {
         </div>
       </div>
 
-      <WizardModal
-        restaurants={withTaste}
-        open={wizardOpen}
-        onClose={() => setWizardOpen(false)}
-        onLocate={setFocusId}
-      />
-      <DuelModal open={duelOpen} onClose={() => setDuelOpen(false)} />
-      <LeaderboardModal
-        open={leaderboardOpen}
-        onClose={() => setLeaderboardOpen(false)}
-        restaurants={withMy}
-        onLocate={setFocusId}
-      />
-      <ProfileModal
-        open={profileOpen}
-        onClose={() => setProfileOpen(false)}
-        restaurants={withMy}
-        regions={regions}
-        regionName={activeIsHome ? "我的湾区" : (activeRegion?.name ?? "")}
-        onLocate={setFocusId}
-      />
-      <CompareModal
-        open={compareOpen}
-        onClose={() => setCompareOpen(false)}
-        restaurants={withMy}
-        onLocate={setFocusId}
-      />
-      <ShareCardModal
-        open={cardOpen}
-        onClose={() => setCardOpen(false)}
-        restaurants={withMy}
-      />
-      <NearbyModal
-        open={nearbyOpen}
-        onClose={() => setNearbyOpen(false)}
-        restaurants={withMy}
-        onLocate={setFocusId}
-      />
-      <ExportModal
-        open={exportOpen}
-        onClose={() => setExportOpen(false)}
-        restaurants={withMy}
-        regionName={activeIsHome ? "我的湾区" : (activeRegion?.name ?? "")}
-      />
+      {wizardOpen && (
+        <WizardModal
+          restaurants={withTaste}
+          open={wizardOpen}
+          onClose={() => setWizardOpen(false)}
+          onLocate={setFocusId}
+        />
+      )}
+      {duelOpen && (
+        <DuelModal open={duelOpen} onClose={() => setDuelOpen(false)} />
+      )}
+      {leaderboardOpen && (
+        <LeaderboardModal
+          open={leaderboardOpen}
+          onClose={() => setLeaderboardOpen(false)}
+          restaurants={withMy}
+          onLocate={setFocusId}
+        />
+      )}
+      {profileOpen && (
+        <ProfileModal
+          open={profileOpen}
+          onClose={() => setProfileOpen(false)}
+          restaurants={withMy}
+          regions={regions}
+          regionName={activeIsHome ? "我的湾区" : (activeRegion?.name ?? "")}
+          onLocate={setFocusId}
+        />
+      )}
+      {compareOpen && (
+        <CompareModal
+          open={compareOpen}
+          onClose={() => setCompareOpen(false)}
+          restaurants={withMy}
+          onLocate={setFocusId}
+        />
+      )}
+      {cardOpen && (
+        <ShareCardModal
+          open={cardOpen}
+          onClose={() => setCardOpen(false)}
+          restaurants={withMy}
+        />
+      )}
+      {nearbyOpen && (
+        <NearbyModal
+          open={nearbyOpen}
+          onClose={() => setNearbyOpen(false)}
+          restaurants={withMy}
+          onLocate={setFocusId}
+        />
+      )}
+      {exportOpen && (
+        <ExportModal
+          open={exportOpen}
+          onClose={() => setExportOpen(false)}
+          restaurants={withMy}
+          regionName={activeIsHome ? "我的湾区" : (activeRegion?.name ?? "")}
+        />
+      )}
       {!PUBLIC_DEMO && (
         <ChatWidget
           onLocate={handleChatLocate}

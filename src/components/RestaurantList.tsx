@@ -384,6 +384,42 @@ export function RestaurantList({
     [restaurants, doGroup],
   );
 
+  // 增量渲染：先渲前 PAGE 张，滚到接近底部再加一批——避免一次性挂 ~千张卡的 DOM。
+  const PAGE = 40;
+  const [visibleCount, setVisibleCount] = useState(PAGE);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // 列表内容变了（切地区/筛选/排序/连锁开关）→ 回到顶部批次。
+  useEffect(() => {
+    setVisibleCount(PAGE);
+  }, [entries]);
+
+  // 被聚焦的店若在批次之外，扩大批次把它渲出来（否则 scrollIntoView/连锁展开找不到）。
+  useEffect(() => {
+    if (focusId == null) return;
+    const idx = entries.findIndex((e) =>
+      e.kind === "single"
+        ? e.r.id === focusId
+        : e.branches.some((b) => b.id === focusId),
+    );
+    if (idx >= 0) setVisibleCount((c) => (idx >= c ? idx + 1 : c));
+  }, [focusId, entries]);
+
+  // 滚到接近底部（提前 800px）时加载下一批。
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (obs) => {
+        if (obs[0]?.isIntersecting)
+          setVisibleCount((c) => Math.min(c + PAGE, entries.length));
+      },
+      { rootMargin: "800px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [entries.length]);
+
   // 若被聚焦的店藏在某个折叠的连锁组里，自动展开它（点地图 marker 也能在列表里看到）。
   useEffect(() => {
     if (focusId == null || !doGroup) return;
@@ -436,7 +472,7 @@ export function RestaurantList({
 
   return (
     <div className="space-y-2">
-      {entries.map((e) =>
+      {entries.slice(0, visibleCount).map((e) =>
         e.kind === "single" ? (
           <RestaurantCard
             key={e.r.id}
@@ -459,6 +495,14 @@ export function RestaurantList({
             onHover={onHover}
           />
         ),
+      )}
+      {visibleCount < entries.length && (
+        <div
+          ref={sentinelRef}
+          className="py-4 text-center text-xs text-muted-foreground"
+        >
+          正在加载更多…（还有 {entries.length - visibleCount} 家）
+        </div>
       )}
     </div>
   );
