@@ -16,7 +16,7 @@ Built solo as a full-stack product: real external-API integrations (Google Place
   <img alt="Vercel" src="https://img.shields.io/badge/Deployed_on_Vercel-000?logo=vercel&logoColor=white">
 </p>
 
-### 🔗 [**Live Demo →** restaurant-select-website.vercel.app](https://restaurant-select-website.vercel.app)
+### 🔗 [**Live Demo →** zhefu-restaurant.vercel.app](https://zhefu-restaurant.vercel.app)
 
 > The live site runs in **read-only demo mode** — browse the map, list, filters, menus, and reviews freely. Anything that would spend an API dollar or mutate data is blocked server-side, so it's safe to poke around. The UI is in Chinese (the app was built for a native-Chinese-speaking user); this README is in English.
 

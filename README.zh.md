@@ -16,7 +16,7 @@
   <img alt="Vercel" src="https://img.shields.io/badge/Deployed_on_Vercel-000?logo=vercel&logoColor=white">
 </p>
 
-### 🔗 [**在线演示 →** restaurant-select-website.vercel.app](https://restaurant-select-website.vercel.app)
+### 🔗 [**在线演示 →** zhefu-restaurant.vercel.app](https://zhefu-restaurant.vercel.app)
 
 > 线上站点跑在**只读演示模式**：地图、列表、筛选、菜单、点评都能自由浏览，任何会花钱或改数据的操作都在服务端被拦截，可以放心点。界面为中文（本应用为一位母语中文的用户打造）。
 
